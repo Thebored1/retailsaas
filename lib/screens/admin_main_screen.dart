@@ -18,6 +18,7 @@ import 'package:retailsaas/widgets/admin_side_menu.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:retailsaas/screens/audit_logs_screen.dart';
 import 'package:retailsaas/screens/finance/liquid_assets_screen.dart';
+import 'package:retailsaas/screens/finance/tax_summary_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   final String initialItem;
@@ -149,9 +150,10 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       case 'Chart of Accounts':
         return const LiquidAssetsScreen();
 
+      case 'Tax Summary':
+        return const TaxSummaryScreen();
       case 'Day End Report':
       case 'Expense Tracker':
-      case 'Tax Summary':
       case 'Profit & Loss':
         return _buildPlaceholder(_selectedItem);
       default:

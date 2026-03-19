@@ -351,17 +351,20 @@ class _PosContentState extends State<PosContent> {
           await _db
               .into(_db.billItems)
               .insert(
-                BillItemsCompanion(
-                  id: Value(const Uuid().v4()),
-                  billId: Value(billId),
-                  productId: Value(item.product.id),
-                  productName: Value(item.product.name),
-                  quantity: Value(item.quantity.toDouble()),
-                  unitPrice: Value(item.unitPrice),
-                  taxAmount: Value(item.taxAmount),
-                  totalAmount: Value(item.total),
-                  warrantyEndDate: Value(item.warrantyEnd),
-                ),
+                  BillItemsCompanion(
+                    id: Value(const Uuid().v4()),
+                    billId: Value(billId),
+                    productId: Value(item.product.id),
+                    productName: Value(item.product.name),
+                    hsnCode: Value(item.product.hsnCode),
+                    quantity: Value(item.quantity.toDouble()),
+                    unitPrice: Value(item.unitPrice),
+                    taxRate: Value(item.product.gstRate),
+                    cessRate: Value(item.product.cessRate),
+                    taxAmount: Value(item.taxAmount),
+                    totalAmount: Value(item.total),
+                    warrantyEndDate: Value(item.warrantyEnd),
+                  ),
               );
         }
 

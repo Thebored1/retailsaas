@@ -4,6 +4,9 @@ class Customer {
   final String name;
   final String email;
   final String address;
+  final String? gstin;
+  final String? stateCode;
+  final String? pinCode;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -13,6 +16,9 @@ class Customer {
     required this.name,
     this.email = '',
     required this.address,
+    this.gstin,
+    this.stateCode,
+    this.pinCode,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),

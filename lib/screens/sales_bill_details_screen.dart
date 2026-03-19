@@ -129,7 +129,7 @@ class _SalesBillDetailsScreenState extends State<SalesBillDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Bill #${_bill!.id.substring(0, 8)}', // Truncate UUID for display
+                            'Bill #${_bill!.id.length > 8 ? _bill!.id.substring(0, 8) : _bill!.id}', // Truncate UUID for display
                             style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -504,7 +504,7 @@ class _SalesBillDetailsScreenState extends State<SalesBillDetailsScreen> {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'Bill #: ${_bill!.id.substring(0, 8)}',
+                    'Bill #: ${_bill!.id.length > 8 ? _bill!.id.substring(0, 8) : _bill!.id}',
                     style: const pw.TextStyle(fontSize: 10),
                   ),
                   pw.Text(

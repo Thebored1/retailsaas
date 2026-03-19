@@ -29,6 +29,9 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
   late TextEditingController _emailController;
   late TextEditingController _addressController;
 
+  late TextEditingController _gstinController;
+  late TextEditingController _stateCodeController;
+  late TextEditingController _pinCodeController;
   @override
   void initState() {
     super.initState();
@@ -38,6 +41,9 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
     );
     _emailController = TextEditingController(text: widget.customerToEdit?.email);
     _addressController = TextEditingController(text: widget.customerToEdit?.address);
+    _gstinController = TextEditingController(text: widget.customerToEdit?.gstin);
+    _stateCodeController = TextEditingController(text: widget.customerToEdit?.stateCode);
+    _pinCodeController = TextEditingController(text: widget.customerToEdit?.pinCode);
   }
 
   @override
@@ -46,6 +52,9 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
+    _gstinController.dispose();
+    _stateCodeController.dispose();
+    _pinCodeController.dispose();
     super.dispose();
   }
 
@@ -67,6 +76,9 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
         phone: phone,
         email: _emailController.text.trim(),
         address: _addressController.text.trim(),
+        gstin: _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
+        stateCode: _stateCodeController.text.trim().isEmpty ? null : _stateCodeController.text.trim(),
+        pinCode: _pinCodeController.text.trim().isEmpty ? null : _pinCodeController.text.trim(),
         createdAt: widget.customerToEdit?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -151,6 +163,33 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      controller: _gstinController,
+                      label: 'GSTIN (Optional)',
+                      maxLength: 15,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CustomTextField(
+                            controller: _stateCodeController,
+                            label: 'State Code (e.g. 27)',
+                            maxLength: 2,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: CustomTextField(
+                            controller: _pinCodeController,
+                            label: 'PIN Code',
+                            maxLength: 6,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

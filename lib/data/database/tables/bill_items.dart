@@ -7,9 +7,14 @@ class BillItems extends Table {
 
   // Snapshot details
   TextColumn get productName => text()();
+  TextColumn get hsnCode => text().nullable()();
 
   RealColumn get quantity => real()();
   RealColumn get unitPrice => real()();
+  
+  // Tax Snapshots
+  RealColumn get taxRate => real().withDefault(const Constant(0.0))();
+  RealColumn get cessRate => real().withDefault(const Constant(0.0))();
   RealColumn get taxAmount => real()();
   RealColumn get totalAmount => real()();
 

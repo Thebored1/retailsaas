@@ -235,11 +235,17 @@ class LiquidAssetsScreen extends StatelessWidget {
   }
 
   Widget _buildHierarchyList(List<Account> accounts) {
+    if (accounts.isEmpty) {
+      return const Center(child: Padding(
+        padding: EdgeInsets.all(32.0),
+        child: Text('No accounts found. Please re-seed or add an account.'),
+      ));
+    }
     // Find Root Children (Level 1 - e.g. "Current Assets")
     // Or simpler, start from Level 2 (Cash & Equivalents) if that's the focus
     final cashEquivalents = accounts.firstWhere(
       (a) => a.id == '1001',
-      orElse: () => accounts.firstWhere((a) => a.parentId == null),
+      orElse: () => accounts.firstWhere((a) => a.parentId == null, orElse: () => accounts.first),
     );
 
     return _buildAccountNode(cashEquivalents, accounts, level: 0);

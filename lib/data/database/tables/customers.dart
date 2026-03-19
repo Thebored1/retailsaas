@@ -6,6 +6,12 @@ class Customers extends Table {
   TextColumn get name => text()();
   TextColumn get email => text().nullable()();
   TextColumn get address => text()();
+  
+  // Statutory Compliance Fields
+  TextColumn get gstin => text().nullable()();
+  TextColumn get stateCode => text().nullable()();
+  TextColumn get pinCode => text().nullable()();
+
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 

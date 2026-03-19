@@ -10,6 +10,7 @@ class PurchaseOrderItems extends Table {
 
   // Snapshot of item details at time of order (in case product changes)
   TextColumn get productName => text()();
+  TextColumn get hsnCode => text().nullable()();
 
   // Tax Snapshot
   RealColumn get taxRate => real()();

@@ -192,7 +192,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'Bill #: ${bill.id.substring(0, 8)}',
+                    'Bill #: ${bill.id.length > 8 ? bill.id.substring(0, 8) : bill.id}',
                     style: const pw.TextStyle(fontSize: 10),
                   ),
                   pw.Text(

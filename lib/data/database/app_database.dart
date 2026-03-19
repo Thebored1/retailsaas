@@ -528,7 +528,7 @@ class AppDatabase extends _$AppDatabase {
             date: Value(sale.date), // Correct field: date
             type: const Value('SALE'),
             description: Value(
-              'Bill #${sale.id.substring(0, 8)}',
+              'Bill #${sale.id.length > 8 ? sale.id.substring(0, 8) : sale.id}',
             ), // Use ID segment as bill number fallback
             debit: const Value(0.0),
             credit: Value(sale.grandTotal),

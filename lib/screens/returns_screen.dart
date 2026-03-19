@@ -268,8 +268,11 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
                   ? '${item.product.name} (Return)'
                   : item.product.name,
             ),
+            hsnCode: Value(item.product.hsnCode),
             quantity: Value(qty.toDouble()),
             unitPrice: Value(price),
+            taxRate: Value(item.product.gstRate),
+            cessRate: Value(item.product.cessRate),
             taxAmount: Value(tax),
             totalAmount: Value(total),
             // No warranty extension on the returned item
@@ -361,8 +364,11 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
                   ? '${item.product.name} (Replacement)'
                   : item.product.name,
             ),
+            hsnCode: Value(item.product.hsnCode),
             quantity: Value(item.quantity.toDouble()),
             unitPrice: Value(price),
+            taxRate: Value(item.product.gstRate),
+            cessRate: Value(item.product.cessRate),
             taxAmount: Value(tax),
             totalAmount: Value(total),
             // Warranty Extension? Yes, if policy exists.

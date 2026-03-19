@@ -643,7 +643,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
           child: Text(
             (transaction.type == 'Sale' || transaction.type == 'Pos Sale') &&
                     transaction.orderId != null
-                ? '#${transaction.orderId!.substring(0, 8)}'
+                ? '#${transaction.orderId!.length > 8 ? transaction.orderId!.substring(0, 8) : transaction.orderId!}'
                 : '#${transaction.id.length > 4 ? transaction.id.substring(transaction.id.length - 4) : transaction.id}',
             style: _cellStyle(),
           ),
@@ -727,7 +727,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
                   (transaction.type == 'Sale' ||
                               transaction.type == 'Pos Sale') &&
                           transaction.orderId != null
-                      ? '#${transaction.orderId!.substring(0, 8)}'
+                      ? '#${transaction.orderId!.length > 8 ? transaction.orderId!.substring(0, 8) : transaction.orderId!}'
                       : '#${transaction.id.length > 4 ? transaction.id.substring(transaction.id.length - 4) : transaction.id}',
                   style: _cellStyle(),
                 ),

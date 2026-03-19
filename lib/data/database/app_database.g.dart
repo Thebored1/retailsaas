@@ -2936,6 +2936,17 @@ class $PurchaseOrderItemsTable extends PurchaseOrderItems
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _hsnCodeMeta = const VerificationMeta(
+    'hsnCode',
+  );
+  @override
+  late final GeneratedColumn<String> hsnCode = GeneratedColumn<String>(
+    'hsn_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _taxRateMeta = const VerificationMeta(
     'taxRate',
   );
@@ -2998,6 +3009,7 @@ class $PurchaseOrderItemsTable extends PurchaseOrderItems
     quantity,
     unitPrice,
     productName,
+    hsnCode,
     taxRate,
     cessRate,
     uom,
@@ -3061,6 +3073,12 @@ class $PurchaseOrderItemsTable extends PurchaseOrderItems
       );
     } else if (isInserting) {
       context.missing(_productNameMeta);
+    }
+    if (data.containsKey('hsn_code')) {
+      context.handle(
+        _hsnCodeMeta,
+        hsnCode.isAcceptableOrUnknown(data['hsn_code']!, _hsnCodeMeta),
+      );
     }
     if (data.containsKey('tax_rate')) {
       context.handle(
@@ -3135,6 +3153,10 @@ class $PurchaseOrderItemsTable extends PurchaseOrderItems
         DriftSqlType.string,
         data['${effectivePrefix}product_name'],
       )!,
+      hsnCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hsn_code'],
+      ),
       taxRate: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}tax_rate'],
@@ -3172,6 +3194,7 @@ class PurchaseOrderItem extends DataClass
   final int quantity;
   final double unitPrice;
   final String productName;
+  final String? hsnCode;
   final double taxRate;
   final double cessRate;
   final String? uom;
@@ -3184,6 +3207,7 @@ class PurchaseOrderItem extends DataClass
     required this.quantity,
     required this.unitPrice,
     required this.productName,
+    this.hsnCode,
     required this.taxRate,
     required this.cessRate,
     this.uom,
@@ -3199,6 +3223,9 @@ class PurchaseOrderItem extends DataClass
     map['quantity'] = Variable<int>(quantity);
     map['unit_price'] = Variable<double>(unitPrice);
     map['product_name'] = Variable<String>(productName);
+    if (!nullToAbsent || hsnCode != null) {
+      map['hsn_code'] = Variable<String>(hsnCode);
+    }
     map['tax_rate'] = Variable<double>(taxRate);
     map['cess_rate'] = Variable<double>(cessRate);
     if (!nullToAbsent || uom != null) {
@@ -3219,6 +3246,9 @@ class PurchaseOrderItem extends DataClass
       quantity: Value(quantity),
       unitPrice: Value(unitPrice),
       productName: Value(productName),
+      hsnCode: hsnCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hsnCode),
       taxRate: Value(taxRate),
       cessRate: Value(cessRate),
       uom: uom == null && nullToAbsent ? const Value.absent() : Value(uom),
@@ -3241,6 +3271,7 @@ class PurchaseOrderItem extends DataClass
       quantity: serializer.fromJson<int>(json['quantity']),
       unitPrice: serializer.fromJson<double>(json['unitPrice']),
       productName: serializer.fromJson<String>(json['productName']),
+      hsnCode: serializer.fromJson<String?>(json['hsnCode']),
       taxRate: serializer.fromJson<double>(json['taxRate']),
       cessRate: serializer.fromJson<double>(json['cessRate']),
       uom: serializer.fromJson<String?>(json['uom']),
@@ -3258,6 +3289,7 @@ class PurchaseOrderItem extends DataClass
       'quantity': serializer.toJson<int>(quantity),
       'unitPrice': serializer.toJson<double>(unitPrice),
       'productName': serializer.toJson<String>(productName),
+      'hsnCode': serializer.toJson<String?>(hsnCode),
       'taxRate': serializer.toJson<double>(taxRate),
       'cessRate': serializer.toJson<double>(cessRate),
       'uom': serializer.toJson<String?>(uom),
@@ -3273,6 +3305,7 @@ class PurchaseOrderItem extends DataClass
     int? quantity,
     double? unitPrice,
     String? productName,
+    Value<String?> hsnCode = const Value.absent(),
     double? taxRate,
     double? cessRate,
     Value<String?> uom = const Value.absent(),
@@ -3285,6 +3318,7 @@ class PurchaseOrderItem extends DataClass
     quantity: quantity ?? this.quantity,
     unitPrice: unitPrice ?? this.unitPrice,
     productName: productName ?? this.productName,
+    hsnCode: hsnCode.present ? hsnCode.value : this.hsnCode,
     taxRate: taxRate ?? this.taxRate,
     cessRate: cessRate ?? this.cessRate,
     uom: uom.present ? uom.value : this.uom,
@@ -3303,6 +3337,7 @@ class PurchaseOrderItem extends DataClass
       productName: data.productName.present
           ? data.productName.value
           : this.productName,
+      hsnCode: data.hsnCode.present ? data.hsnCode.value : this.hsnCode,
       taxRate: data.taxRate.present ? data.taxRate.value : this.taxRate,
       cessRate: data.cessRate.present ? data.cessRate.value : this.cessRate,
       uom: data.uom.present ? data.uom.value : this.uom,
@@ -3324,6 +3359,7 @@ class PurchaseOrderItem extends DataClass
           ..write('quantity: $quantity, ')
           ..write('unitPrice: $unitPrice, ')
           ..write('productName: $productName, ')
+          ..write('hsnCode: $hsnCode, ')
           ..write('taxRate: $taxRate, ')
           ..write('cessRate: $cessRate, ')
           ..write('uom: $uom, ')
@@ -3341,6 +3377,7 @@ class PurchaseOrderItem extends DataClass
     quantity,
     unitPrice,
     productName,
+    hsnCode,
     taxRate,
     cessRate,
     uom,
@@ -3357,6 +3394,7 @@ class PurchaseOrderItem extends DataClass
           other.quantity == this.quantity &&
           other.unitPrice == this.unitPrice &&
           other.productName == this.productName &&
+          other.hsnCode == this.hsnCode &&
           other.taxRate == this.taxRate &&
           other.cessRate == this.cessRate &&
           other.uom == this.uom &&
@@ -3371,6 +3409,7 @@ class PurchaseOrderItemsCompanion extends UpdateCompanion<PurchaseOrderItem> {
   final Value<int> quantity;
   final Value<double> unitPrice;
   final Value<String> productName;
+  final Value<String?> hsnCode;
   final Value<double> taxRate;
   final Value<double> cessRate;
   final Value<String?> uom;
@@ -3383,6 +3422,7 @@ class PurchaseOrderItemsCompanion extends UpdateCompanion<PurchaseOrderItem> {
     this.quantity = const Value.absent(),
     this.unitPrice = const Value.absent(),
     this.productName = const Value.absent(),
+    this.hsnCode = const Value.absent(),
     this.taxRate = const Value.absent(),
     this.cessRate = const Value.absent(),
     this.uom = const Value.absent(),
@@ -3396,6 +3436,7 @@ class PurchaseOrderItemsCompanion extends UpdateCompanion<PurchaseOrderItem> {
     required int quantity,
     required double unitPrice,
     required String productName,
+    this.hsnCode = const Value.absent(),
     required double taxRate,
     required double cessRate,
     this.uom = const Value.absent(),
@@ -3415,6 +3456,7 @@ class PurchaseOrderItemsCompanion extends UpdateCompanion<PurchaseOrderItem> {
     Expression<int>? quantity,
     Expression<double>? unitPrice,
     Expression<String>? productName,
+    Expression<String>? hsnCode,
     Expression<double>? taxRate,
     Expression<double>? cessRate,
     Expression<String>? uom,
@@ -3428,6 +3470,7 @@ class PurchaseOrderItemsCompanion extends UpdateCompanion<PurchaseOrderItem> {
       if (quantity != null) 'quantity': quantity,
       if (unitPrice != null) 'unit_price': unitPrice,
       if (productName != null) 'product_name': productName,
+      if (hsnCode != null) 'hsn_code': hsnCode,
       if (taxRate != null) 'tax_rate': taxRate,
       if (cessRate != null) 'cess_rate': cessRate,
       if (uom != null) 'uom': uom,
@@ -3443,6 +3486,7 @@ class PurchaseOrderItemsCompanion extends UpdateCompanion<PurchaseOrderItem> {
     Value<int>? quantity,
     Value<double>? unitPrice,
     Value<String>? productName,
+    Value<String?>? hsnCode,
     Value<double>? taxRate,
     Value<double>? cessRate,
     Value<String?>? uom,
@@ -3456,6 +3500,7 @@ class PurchaseOrderItemsCompanion extends UpdateCompanion<PurchaseOrderItem> {
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
       productName: productName ?? this.productName,
+      hsnCode: hsnCode ?? this.hsnCode,
       taxRate: taxRate ?? this.taxRate,
       cessRate: cessRate ?? this.cessRate,
       uom: uom ?? this.uom,
@@ -3485,6 +3530,9 @@ class PurchaseOrderItemsCompanion extends UpdateCompanion<PurchaseOrderItem> {
     if (productName.present) {
       map['product_name'] = Variable<String>(productName.value);
     }
+    if (hsnCode.present) {
+      map['hsn_code'] = Variable<String>(hsnCode.value);
+    }
     if (taxRate.present) {
       map['tax_rate'] = Variable<double>(taxRate.value);
     }
@@ -3512,6 +3560,7 @@ class PurchaseOrderItemsCompanion extends UpdateCompanion<PurchaseOrderItem> {
           ..write('quantity: $quantity, ')
           ..write('unitPrice: $unitPrice, ')
           ..write('productName: $productName, ')
+          ..write('hsnCode: $hsnCode, ')
           ..write('taxRate: $taxRate, ')
           ..write('cessRate: $cessRate, ')
           ..write('uom: $uom, ')
@@ -5237,6 +5286,17 @@ class $GoodsReceiptItemsTable extends GoodsReceiptItems
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _hsnCodeMeta = const VerificationMeta(
+    'hsnCode',
+  );
+  @override
+  late final GeneratedColumn<String> hsnCode = GeneratedColumn<String>(
+    'hsn_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _orderedQtyMeta = const VerificationMeta(
     'orderedQty',
   );
@@ -5329,6 +5389,7 @@ class $GoodsReceiptItemsTable extends GoodsReceiptItems
     grnId,
     productId,
     productName,
+    hsnCode,
     orderedQty,
     receivedQty,
     rejectedQty,
@@ -5381,6 +5442,12 @@ class $GoodsReceiptItemsTable extends GoodsReceiptItems
       );
     } else if (isInserting) {
       context.missing(_productNameMeta);
+    }
+    if (data.containsKey('hsn_code')) {
+      context.handle(
+        _hsnCodeMeta,
+        hsnCode.isAcceptableOrUnknown(data['hsn_code']!, _hsnCodeMeta),
+      );
     }
     if (data.containsKey('ordered_qty')) {
       context.handle(
@@ -5477,6 +5544,10 @@ class $GoodsReceiptItemsTable extends GoodsReceiptItems
         DriftSqlType.string,
         data['${effectivePrefix}product_name'],
       )!,
+      hsnCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hsn_code'],
+      ),
       orderedQty: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}ordered_qty'],
@@ -5524,6 +5595,7 @@ class GoodsReceiptItem extends DataClass
   final String grnId;
   final String productId;
   final String productName;
+  final String? hsnCode;
   final double orderedQty;
   final double receivedQty;
   final double rejectedQty;
@@ -5537,6 +5609,7 @@ class GoodsReceiptItem extends DataClass
     required this.grnId,
     required this.productId,
     required this.productName,
+    this.hsnCode,
     required this.orderedQty,
     required this.receivedQty,
     required this.rejectedQty,
@@ -5553,6 +5626,9 @@ class GoodsReceiptItem extends DataClass
     map['grn_id'] = Variable<String>(grnId);
     map['product_id'] = Variable<String>(productId);
     map['product_name'] = Variable<String>(productName);
+    if (!nullToAbsent || hsnCode != null) {
+      map['hsn_code'] = Variable<String>(hsnCode);
+    }
     map['ordered_qty'] = Variable<double>(orderedQty);
     map['received_qty'] = Variable<double>(receivedQty);
     map['rejected_qty'] = Variable<double>(rejectedQty);
@@ -5572,6 +5648,9 @@ class GoodsReceiptItem extends DataClass
       grnId: Value(grnId),
       productId: Value(productId),
       productName: Value(productName),
+      hsnCode: hsnCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hsnCode),
       orderedQty: Value(orderedQty),
       receivedQty: Value(receivedQty),
       rejectedQty: Value(rejectedQty),
@@ -5593,6 +5672,7 @@ class GoodsReceiptItem extends DataClass
       grnId: serializer.fromJson<String>(json['grnId']),
       productId: serializer.fromJson<String>(json['productId']),
       productName: serializer.fromJson<String>(json['productName']),
+      hsnCode: serializer.fromJson<String?>(json['hsnCode']),
       orderedQty: serializer.fromJson<double>(json['orderedQty']),
       receivedQty: serializer.fromJson<double>(json['receivedQty']),
       rejectedQty: serializer.fromJson<double>(json['rejectedQty']),
@@ -5611,6 +5691,7 @@ class GoodsReceiptItem extends DataClass
       'grnId': serializer.toJson<String>(grnId),
       'productId': serializer.toJson<String>(productId),
       'productName': serializer.toJson<String>(productName),
+      'hsnCode': serializer.toJson<String?>(hsnCode),
       'orderedQty': serializer.toJson<double>(orderedQty),
       'receivedQty': serializer.toJson<double>(receivedQty),
       'rejectedQty': serializer.toJson<double>(rejectedQty),
@@ -5627,6 +5708,7 @@ class GoodsReceiptItem extends DataClass
     String? grnId,
     String? productId,
     String? productName,
+    Value<String?> hsnCode = const Value.absent(),
     double? orderedQty,
     double? receivedQty,
     double? rejectedQty,
@@ -5640,6 +5722,7 @@ class GoodsReceiptItem extends DataClass
     grnId: grnId ?? this.grnId,
     productId: productId ?? this.productId,
     productName: productName ?? this.productName,
+    hsnCode: hsnCode.present ? hsnCode.value : this.hsnCode,
     orderedQty: orderedQty ?? this.orderedQty,
     receivedQty: receivedQty ?? this.receivedQty,
     rejectedQty: rejectedQty ?? this.rejectedQty,
@@ -5657,6 +5740,7 @@ class GoodsReceiptItem extends DataClass
       productName: data.productName.present
           ? data.productName.value
           : this.productName,
+      hsnCode: data.hsnCode.present ? data.hsnCode.value : this.hsnCode,
       orderedQty: data.orderedQty.present
           ? data.orderedQty.value
           : this.orderedQty,
@@ -5685,6 +5769,7 @@ class GoodsReceiptItem extends DataClass
           ..write('grnId: $grnId, ')
           ..write('productId: $productId, ')
           ..write('productName: $productName, ')
+          ..write('hsnCode: $hsnCode, ')
           ..write('orderedQty: $orderedQty, ')
           ..write('receivedQty: $receivedQty, ')
           ..write('rejectedQty: $rejectedQty, ')
@@ -5703,6 +5788,7 @@ class GoodsReceiptItem extends DataClass
     grnId,
     productId,
     productName,
+    hsnCode,
     orderedQty,
     receivedQty,
     rejectedQty,
@@ -5720,6 +5806,7 @@ class GoodsReceiptItem extends DataClass
           other.grnId == this.grnId &&
           other.productId == this.productId &&
           other.productName == this.productName &&
+          other.hsnCode == this.hsnCode &&
           other.orderedQty == this.orderedQty &&
           other.receivedQty == this.receivedQty &&
           other.rejectedQty == this.rejectedQty &&
@@ -5735,6 +5822,7 @@ class GoodsReceiptItemsCompanion extends UpdateCompanion<GoodsReceiptItem> {
   final Value<String> grnId;
   final Value<String> productId;
   final Value<String> productName;
+  final Value<String?> hsnCode;
   final Value<double> orderedQty;
   final Value<double> receivedQty;
   final Value<double> rejectedQty;
@@ -5749,6 +5837,7 @@ class GoodsReceiptItemsCompanion extends UpdateCompanion<GoodsReceiptItem> {
     this.grnId = const Value.absent(),
     this.productId = const Value.absent(),
     this.productName = const Value.absent(),
+    this.hsnCode = const Value.absent(),
     this.orderedQty = const Value.absent(),
     this.receivedQty = const Value.absent(),
     this.rejectedQty = const Value.absent(),
@@ -5764,6 +5853,7 @@ class GoodsReceiptItemsCompanion extends UpdateCompanion<GoodsReceiptItem> {
     required String grnId,
     required String productId,
     required String productName,
+    this.hsnCode = const Value.absent(),
     required double orderedQty,
     required double receivedQty,
     required double rejectedQty,
@@ -5787,6 +5877,7 @@ class GoodsReceiptItemsCompanion extends UpdateCompanion<GoodsReceiptItem> {
     Expression<String>? grnId,
     Expression<String>? productId,
     Expression<String>? productName,
+    Expression<String>? hsnCode,
     Expression<double>? orderedQty,
     Expression<double>? receivedQty,
     Expression<double>? rejectedQty,
@@ -5802,6 +5893,7 @@ class GoodsReceiptItemsCompanion extends UpdateCompanion<GoodsReceiptItem> {
       if (grnId != null) 'grn_id': grnId,
       if (productId != null) 'product_id': productId,
       if (productName != null) 'product_name': productName,
+      if (hsnCode != null) 'hsn_code': hsnCode,
       if (orderedQty != null) 'ordered_qty': orderedQty,
       if (receivedQty != null) 'received_qty': receivedQty,
       if (rejectedQty != null) 'rejected_qty': rejectedQty,
@@ -5819,6 +5911,7 @@ class GoodsReceiptItemsCompanion extends UpdateCompanion<GoodsReceiptItem> {
     Value<String>? grnId,
     Value<String>? productId,
     Value<String>? productName,
+    Value<String?>? hsnCode,
     Value<double>? orderedQty,
     Value<double>? receivedQty,
     Value<double>? rejectedQty,
@@ -5834,6 +5927,7 @@ class GoodsReceiptItemsCompanion extends UpdateCompanion<GoodsReceiptItem> {
       grnId: grnId ?? this.grnId,
       productId: productId ?? this.productId,
       productName: productName ?? this.productName,
+      hsnCode: hsnCode ?? this.hsnCode,
       orderedQty: orderedQty ?? this.orderedQty,
       receivedQty: receivedQty ?? this.receivedQty,
       rejectedQty: rejectedQty ?? this.rejectedQty,
@@ -5860,6 +5954,9 @@ class GoodsReceiptItemsCompanion extends UpdateCompanion<GoodsReceiptItem> {
     }
     if (productName.present) {
       map['product_name'] = Variable<String>(productName.value);
+    }
+    if (hsnCode.present) {
+      map['hsn_code'] = Variable<String>(hsnCode.value);
     }
     if (orderedQty.present) {
       map['ordered_qty'] = Variable<double>(orderedQty.value);
@@ -5898,6 +5995,7 @@ class GoodsReceiptItemsCompanion extends UpdateCompanion<GoodsReceiptItem> {
           ..write('grnId: $grnId, ')
           ..write('productId: $productId, ')
           ..write('productName: $productName, ')
+          ..write('hsnCode: $hsnCode, ')
           ..write('orderedQty: $orderedQty, ')
           ..write('receivedQty: $receivedQty, ')
           ..write('rejectedQty: $rejectedQty, ')
@@ -7770,6 +7868,17 @@ class $BillItemsTable extends BillItems
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _hsnCodeMeta = const VerificationMeta(
+    'hsnCode',
+  );
+  @override
+  late final GeneratedColumn<String> hsnCode = GeneratedColumn<String>(
+    'hsn_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _quantityMeta = const VerificationMeta(
     'quantity',
   );
@@ -7791,6 +7900,30 @@ class $BillItemsTable extends BillItems
     false,
     type: DriftSqlType.double,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _taxRateMeta = const VerificationMeta(
+    'taxRate',
+  );
+  @override
+  late final GeneratedColumn<double> taxRate = GeneratedColumn<double>(
+    'tax_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _cessRateMeta = const VerificationMeta(
+    'cessRate',
+  );
+  @override
+  late final GeneratedColumn<double> cessRate = GeneratedColumn<double>(
+    'cess_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
   );
   static const VerificationMeta _taxAmountMeta = const VerificationMeta(
     'taxAmount',
@@ -7832,8 +7965,11 @@ class $BillItemsTable extends BillItems
     billId,
     productId,
     productName,
+    hsnCode,
     quantity,
     unitPrice,
+    taxRate,
+    cessRate,
     taxAmount,
     totalAmount,
     warrantyEndDate,
@@ -7882,6 +8018,12 @@ class $BillItemsTable extends BillItems
     } else if (isInserting) {
       context.missing(_productNameMeta);
     }
+    if (data.containsKey('hsn_code')) {
+      context.handle(
+        _hsnCodeMeta,
+        hsnCode.isAcceptableOrUnknown(data['hsn_code']!, _hsnCodeMeta),
+      );
+    }
     if (data.containsKey('quantity')) {
       context.handle(
         _quantityMeta,
@@ -7897,6 +8039,18 @@ class $BillItemsTable extends BillItems
       );
     } else if (isInserting) {
       context.missing(_unitPriceMeta);
+    }
+    if (data.containsKey('tax_rate')) {
+      context.handle(
+        _taxRateMeta,
+        taxRate.isAcceptableOrUnknown(data['tax_rate']!, _taxRateMeta),
+      );
+    }
+    if (data.containsKey('cess_rate')) {
+      context.handle(
+        _cessRateMeta,
+        cessRate.isAcceptableOrUnknown(data['cess_rate']!, _cessRateMeta),
+      );
     }
     if (data.containsKey('tax_amount')) {
       context.handle(
@@ -7951,6 +8105,10 @@ class $BillItemsTable extends BillItems
         DriftSqlType.string,
         data['${effectivePrefix}product_name'],
       )!,
+      hsnCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hsn_code'],
+      ),
       quantity: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}quantity'],
@@ -7958,6 +8116,14 @@ class $BillItemsTable extends BillItems
       unitPrice: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}unit_price'],
+      )!,
+      taxRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tax_rate'],
+      )!,
+      cessRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cess_rate'],
       )!,
       taxAmount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
@@ -7985,8 +8151,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
   final String billId;
   final String productId;
   final String productName;
+  final String? hsnCode;
   final double quantity;
   final double unitPrice;
+  final double taxRate;
+  final double cessRate;
   final double taxAmount;
   final double totalAmount;
   final DateTime? warrantyEndDate;
@@ -7995,8 +8164,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
     required this.billId,
     required this.productId,
     required this.productName,
+    this.hsnCode,
     required this.quantity,
     required this.unitPrice,
+    required this.taxRate,
+    required this.cessRate,
     required this.taxAmount,
     required this.totalAmount,
     this.warrantyEndDate,
@@ -8008,8 +8180,13 @@ class BillItem extends DataClass implements Insertable<BillItem> {
     map['bill_id'] = Variable<String>(billId);
     map['product_id'] = Variable<String>(productId);
     map['product_name'] = Variable<String>(productName);
+    if (!nullToAbsent || hsnCode != null) {
+      map['hsn_code'] = Variable<String>(hsnCode);
+    }
     map['quantity'] = Variable<double>(quantity);
     map['unit_price'] = Variable<double>(unitPrice);
+    map['tax_rate'] = Variable<double>(taxRate);
+    map['cess_rate'] = Variable<double>(cessRate);
     map['tax_amount'] = Variable<double>(taxAmount);
     map['total_amount'] = Variable<double>(totalAmount);
     if (!nullToAbsent || warrantyEndDate != null) {
@@ -8024,8 +8201,13 @@ class BillItem extends DataClass implements Insertable<BillItem> {
       billId: Value(billId),
       productId: Value(productId),
       productName: Value(productName),
+      hsnCode: hsnCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hsnCode),
       quantity: Value(quantity),
       unitPrice: Value(unitPrice),
+      taxRate: Value(taxRate),
+      cessRate: Value(cessRate),
       taxAmount: Value(taxAmount),
       totalAmount: Value(totalAmount),
       warrantyEndDate: warrantyEndDate == null && nullToAbsent
@@ -8044,8 +8226,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
       billId: serializer.fromJson<String>(json['billId']),
       productId: serializer.fromJson<String>(json['productId']),
       productName: serializer.fromJson<String>(json['productName']),
+      hsnCode: serializer.fromJson<String?>(json['hsnCode']),
       quantity: serializer.fromJson<double>(json['quantity']),
       unitPrice: serializer.fromJson<double>(json['unitPrice']),
+      taxRate: serializer.fromJson<double>(json['taxRate']),
+      cessRate: serializer.fromJson<double>(json['cessRate']),
       taxAmount: serializer.fromJson<double>(json['taxAmount']),
       totalAmount: serializer.fromJson<double>(json['totalAmount']),
       warrantyEndDate: serializer.fromJson<DateTime?>(json['warrantyEndDate']),
@@ -8059,8 +8244,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
       'billId': serializer.toJson<String>(billId),
       'productId': serializer.toJson<String>(productId),
       'productName': serializer.toJson<String>(productName),
+      'hsnCode': serializer.toJson<String?>(hsnCode),
       'quantity': serializer.toJson<double>(quantity),
       'unitPrice': serializer.toJson<double>(unitPrice),
+      'taxRate': serializer.toJson<double>(taxRate),
+      'cessRate': serializer.toJson<double>(cessRate),
       'taxAmount': serializer.toJson<double>(taxAmount),
       'totalAmount': serializer.toJson<double>(totalAmount),
       'warrantyEndDate': serializer.toJson<DateTime?>(warrantyEndDate),
@@ -8072,8 +8260,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
     String? billId,
     String? productId,
     String? productName,
+    Value<String?> hsnCode = const Value.absent(),
     double? quantity,
     double? unitPrice,
+    double? taxRate,
+    double? cessRate,
     double? taxAmount,
     double? totalAmount,
     Value<DateTime?> warrantyEndDate = const Value.absent(),
@@ -8082,8 +8273,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
     billId: billId ?? this.billId,
     productId: productId ?? this.productId,
     productName: productName ?? this.productName,
+    hsnCode: hsnCode.present ? hsnCode.value : this.hsnCode,
     quantity: quantity ?? this.quantity,
     unitPrice: unitPrice ?? this.unitPrice,
+    taxRate: taxRate ?? this.taxRate,
+    cessRate: cessRate ?? this.cessRate,
     taxAmount: taxAmount ?? this.taxAmount,
     totalAmount: totalAmount ?? this.totalAmount,
     warrantyEndDate: warrantyEndDate.present
@@ -8098,8 +8292,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
       productName: data.productName.present
           ? data.productName.value
           : this.productName,
+      hsnCode: data.hsnCode.present ? data.hsnCode.value : this.hsnCode,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
       unitPrice: data.unitPrice.present ? data.unitPrice.value : this.unitPrice,
+      taxRate: data.taxRate.present ? data.taxRate.value : this.taxRate,
+      cessRate: data.cessRate.present ? data.cessRate.value : this.cessRate,
       taxAmount: data.taxAmount.present ? data.taxAmount.value : this.taxAmount,
       totalAmount: data.totalAmount.present
           ? data.totalAmount.value
@@ -8117,8 +8314,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
           ..write('billId: $billId, ')
           ..write('productId: $productId, ')
           ..write('productName: $productName, ')
+          ..write('hsnCode: $hsnCode, ')
           ..write('quantity: $quantity, ')
           ..write('unitPrice: $unitPrice, ')
+          ..write('taxRate: $taxRate, ')
+          ..write('cessRate: $cessRate, ')
           ..write('taxAmount: $taxAmount, ')
           ..write('totalAmount: $totalAmount, ')
           ..write('warrantyEndDate: $warrantyEndDate')
@@ -8132,8 +8332,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
     billId,
     productId,
     productName,
+    hsnCode,
     quantity,
     unitPrice,
+    taxRate,
+    cessRate,
     taxAmount,
     totalAmount,
     warrantyEndDate,
@@ -8146,8 +8349,11 @@ class BillItem extends DataClass implements Insertable<BillItem> {
           other.billId == this.billId &&
           other.productId == this.productId &&
           other.productName == this.productName &&
+          other.hsnCode == this.hsnCode &&
           other.quantity == this.quantity &&
           other.unitPrice == this.unitPrice &&
+          other.taxRate == this.taxRate &&
+          other.cessRate == this.cessRate &&
           other.taxAmount == this.taxAmount &&
           other.totalAmount == this.totalAmount &&
           other.warrantyEndDate == this.warrantyEndDate);
@@ -8158,8 +8364,11 @@ class BillItemsCompanion extends UpdateCompanion<BillItem> {
   final Value<String> billId;
   final Value<String> productId;
   final Value<String> productName;
+  final Value<String?> hsnCode;
   final Value<double> quantity;
   final Value<double> unitPrice;
+  final Value<double> taxRate;
+  final Value<double> cessRate;
   final Value<double> taxAmount;
   final Value<double> totalAmount;
   final Value<DateTime?> warrantyEndDate;
@@ -8169,8 +8378,11 @@ class BillItemsCompanion extends UpdateCompanion<BillItem> {
     this.billId = const Value.absent(),
     this.productId = const Value.absent(),
     this.productName = const Value.absent(),
+    this.hsnCode = const Value.absent(),
     this.quantity = const Value.absent(),
     this.unitPrice = const Value.absent(),
+    this.taxRate = const Value.absent(),
+    this.cessRate = const Value.absent(),
     this.taxAmount = const Value.absent(),
     this.totalAmount = const Value.absent(),
     this.warrantyEndDate = const Value.absent(),
@@ -8181,8 +8393,11 @@ class BillItemsCompanion extends UpdateCompanion<BillItem> {
     required String billId,
     required String productId,
     required String productName,
+    this.hsnCode = const Value.absent(),
     required double quantity,
     required double unitPrice,
+    this.taxRate = const Value.absent(),
+    this.cessRate = const Value.absent(),
     required double taxAmount,
     required double totalAmount,
     this.warrantyEndDate = const Value.absent(),
@@ -8200,8 +8415,11 @@ class BillItemsCompanion extends UpdateCompanion<BillItem> {
     Expression<String>? billId,
     Expression<String>? productId,
     Expression<String>? productName,
+    Expression<String>? hsnCode,
     Expression<double>? quantity,
     Expression<double>? unitPrice,
+    Expression<double>? taxRate,
+    Expression<double>? cessRate,
     Expression<double>? taxAmount,
     Expression<double>? totalAmount,
     Expression<DateTime>? warrantyEndDate,
@@ -8212,8 +8430,11 @@ class BillItemsCompanion extends UpdateCompanion<BillItem> {
       if (billId != null) 'bill_id': billId,
       if (productId != null) 'product_id': productId,
       if (productName != null) 'product_name': productName,
+      if (hsnCode != null) 'hsn_code': hsnCode,
       if (quantity != null) 'quantity': quantity,
       if (unitPrice != null) 'unit_price': unitPrice,
+      if (taxRate != null) 'tax_rate': taxRate,
+      if (cessRate != null) 'cess_rate': cessRate,
       if (taxAmount != null) 'tax_amount': taxAmount,
       if (totalAmount != null) 'total_amount': totalAmount,
       if (warrantyEndDate != null) 'warranty_end_date': warrantyEndDate,
@@ -8226,8 +8447,11 @@ class BillItemsCompanion extends UpdateCompanion<BillItem> {
     Value<String>? billId,
     Value<String>? productId,
     Value<String>? productName,
+    Value<String?>? hsnCode,
     Value<double>? quantity,
     Value<double>? unitPrice,
+    Value<double>? taxRate,
+    Value<double>? cessRate,
     Value<double>? taxAmount,
     Value<double>? totalAmount,
     Value<DateTime?>? warrantyEndDate,
@@ -8238,8 +8462,11 @@ class BillItemsCompanion extends UpdateCompanion<BillItem> {
       billId: billId ?? this.billId,
       productId: productId ?? this.productId,
       productName: productName ?? this.productName,
+      hsnCode: hsnCode ?? this.hsnCode,
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
+      taxRate: taxRate ?? this.taxRate,
+      cessRate: cessRate ?? this.cessRate,
       taxAmount: taxAmount ?? this.taxAmount,
       totalAmount: totalAmount ?? this.totalAmount,
       warrantyEndDate: warrantyEndDate ?? this.warrantyEndDate,
@@ -8262,11 +8489,20 @@ class BillItemsCompanion extends UpdateCompanion<BillItem> {
     if (productName.present) {
       map['product_name'] = Variable<String>(productName.value);
     }
+    if (hsnCode.present) {
+      map['hsn_code'] = Variable<String>(hsnCode.value);
+    }
     if (quantity.present) {
       map['quantity'] = Variable<double>(quantity.value);
     }
     if (unitPrice.present) {
       map['unit_price'] = Variable<double>(unitPrice.value);
+    }
+    if (taxRate.present) {
+      map['tax_rate'] = Variable<double>(taxRate.value);
+    }
+    if (cessRate.present) {
+      map['cess_rate'] = Variable<double>(cessRate.value);
     }
     if (taxAmount.present) {
       map['tax_amount'] = Variable<double>(taxAmount.value);
@@ -8290,8 +8526,11 @@ class BillItemsCompanion extends UpdateCompanion<BillItem> {
           ..write('billId: $billId, ')
           ..write('productId: $productId, ')
           ..write('productName: $productName, ')
+          ..write('hsnCode: $hsnCode, ')
           ..write('quantity: $quantity, ')
           ..write('unitPrice: $unitPrice, ')
+          ..write('taxRate: $taxRate, ')
+          ..write('cessRate: $cessRate, ')
           ..write('taxAmount: $taxAmount, ')
           ..write('totalAmount: $totalAmount, ')
           ..write('warrantyEndDate: $warrantyEndDate, ')
@@ -12138,6 +12377,37 @@ class $CustomersTable extends Customers
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _gstinMeta = const VerificationMeta('gstin');
+  @override
+  late final GeneratedColumn<String> gstin = GeneratedColumn<String>(
+    'gstin',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stateCodeMeta = const VerificationMeta(
+    'stateCode',
+  );
+  @override
+  late final GeneratedColumn<String> stateCode = GeneratedColumn<String>(
+    'state_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pinCodeMeta = const VerificationMeta(
+    'pinCode',
+  );
+  @override
+  late final GeneratedColumn<String> pinCode = GeneratedColumn<String>(
+    'pin_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -12167,6 +12437,9 @@ class $CustomersTable extends Customers
     name,
     email,
     address,
+    gstin,
+    stateCode,
+    pinCode,
     createdAt,
     updatedAt,
   ];
@@ -12217,6 +12490,24 @@ class $CustomersTable extends Customers
     } else if (isInserting) {
       context.missing(_addressMeta);
     }
+    if (data.containsKey('gstin')) {
+      context.handle(
+        _gstinMeta,
+        gstin.isAcceptableOrUnknown(data['gstin']!, _gstinMeta),
+      );
+    }
+    if (data.containsKey('state_code')) {
+      context.handle(
+        _stateCodeMeta,
+        stateCode.isAcceptableOrUnknown(data['state_code']!, _stateCodeMeta),
+      );
+    }
+    if (data.containsKey('pin_code')) {
+      context.handle(
+        _pinCodeMeta,
+        pinCode.isAcceptableOrUnknown(data['pin_code']!, _pinCodeMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -12262,6 +12553,18 @@ class $CustomersTable extends Customers
         DriftSqlType.string,
         data['${effectivePrefix}address'],
       )!,
+      gstin: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gstin'],
+      ),
+      stateCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state_code'],
+      ),
+      pinCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pin_code'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -12285,6 +12588,9 @@ class Customer extends DataClass implements Insertable<Customer> {
   final String name;
   final String? email;
   final String address;
+  final String? gstin;
+  final String? stateCode;
+  final String? pinCode;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Customer({
@@ -12293,6 +12599,9 @@ class Customer extends DataClass implements Insertable<Customer> {
     required this.name,
     this.email,
     required this.address,
+    this.gstin,
+    this.stateCode,
+    this.pinCode,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -12306,6 +12615,15 @@ class Customer extends DataClass implements Insertable<Customer> {
       map['email'] = Variable<String>(email);
     }
     map['address'] = Variable<String>(address);
+    if (!nullToAbsent || gstin != null) {
+      map['gstin'] = Variable<String>(gstin);
+    }
+    if (!nullToAbsent || stateCode != null) {
+      map['state_code'] = Variable<String>(stateCode);
+    }
+    if (!nullToAbsent || pinCode != null) {
+      map['pin_code'] = Variable<String>(pinCode);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -12320,6 +12638,15 @@ class Customer extends DataClass implements Insertable<Customer> {
           ? const Value.absent()
           : Value(email),
       address: Value(address),
+      gstin: gstin == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gstin),
+      stateCode: stateCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stateCode),
+      pinCode: pinCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pinCode),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -12336,6 +12663,9 @@ class Customer extends DataClass implements Insertable<Customer> {
       name: serializer.fromJson<String>(json['name']),
       email: serializer.fromJson<String?>(json['email']),
       address: serializer.fromJson<String>(json['address']),
+      gstin: serializer.fromJson<String?>(json['gstin']),
+      stateCode: serializer.fromJson<String?>(json['stateCode']),
+      pinCode: serializer.fromJson<String?>(json['pinCode']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -12349,6 +12679,9 @@ class Customer extends DataClass implements Insertable<Customer> {
       'name': serializer.toJson<String>(name),
       'email': serializer.toJson<String?>(email),
       'address': serializer.toJson<String>(address),
+      'gstin': serializer.toJson<String?>(gstin),
+      'stateCode': serializer.toJson<String?>(stateCode),
+      'pinCode': serializer.toJson<String?>(pinCode),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -12360,6 +12693,9 @@ class Customer extends DataClass implements Insertable<Customer> {
     String? name,
     Value<String?> email = const Value.absent(),
     String? address,
+    Value<String?> gstin = const Value.absent(),
+    Value<String?> stateCode = const Value.absent(),
+    Value<String?> pinCode = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Customer(
@@ -12368,6 +12704,9 @@ class Customer extends DataClass implements Insertable<Customer> {
     name: name ?? this.name,
     email: email.present ? email.value : this.email,
     address: address ?? this.address,
+    gstin: gstin.present ? gstin.value : this.gstin,
+    stateCode: stateCode.present ? stateCode.value : this.stateCode,
+    pinCode: pinCode.present ? pinCode.value : this.pinCode,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -12378,6 +12717,9 @@ class Customer extends DataClass implements Insertable<Customer> {
       name: data.name.present ? data.name.value : this.name,
       email: data.email.present ? data.email.value : this.email,
       address: data.address.present ? data.address.value : this.address,
+      gstin: data.gstin.present ? data.gstin.value : this.gstin,
+      stateCode: data.stateCode.present ? data.stateCode.value : this.stateCode,
+      pinCode: data.pinCode.present ? data.pinCode.value : this.pinCode,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -12391,6 +12733,9 @@ class Customer extends DataClass implements Insertable<Customer> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('address: $address, ')
+          ..write('gstin: $gstin, ')
+          ..write('stateCode: $stateCode, ')
+          ..write('pinCode: $pinCode, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -12398,8 +12743,18 @@ class Customer extends DataClass implements Insertable<Customer> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, phone, name, email, address, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    phone,
+    name,
+    email,
+    address,
+    gstin,
+    stateCode,
+    pinCode,
+    createdAt,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -12409,6 +12764,9 @@ class Customer extends DataClass implements Insertable<Customer> {
           other.name == this.name &&
           other.email == this.email &&
           other.address == this.address &&
+          other.gstin == this.gstin &&
+          other.stateCode == this.stateCode &&
+          other.pinCode == this.pinCode &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -12419,6 +12777,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<String> name;
   final Value<String?> email;
   final Value<String> address;
+  final Value<String?> gstin;
+  final Value<String?> stateCode;
+  final Value<String?> pinCode;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -12428,6 +12789,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.name = const Value.absent(),
     this.email = const Value.absent(),
     this.address = const Value.absent(),
+    this.gstin = const Value.absent(),
+    this.stateCode = const Value.absent(),
+    this.pinCode = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -12438,6 +12802,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     required String name,
     this.email = const Value.absent(),
     required String address,
+    this.gstin = const Value.absent(),
+    this.stateCode = const Value.absent(),
+    this.pinCode = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -12453,6 +12820,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Expression<String>? name,
     Expression<String>? email,
     Expression<String>? address,
+    Expression<String>? gstin,
+    Expression<String>? stateCode,
+    Expression<String>? pinCode,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -12463,6 +12833,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       if (name != null) 'name': name,
       if (email != null) 'email': email,
       if (address != null) 'address': address,
+      if (gstin != null) 'gstin': gstin,
+      if (stateCode != null) 'state_code': stateCode,
+      if (pinCode != null) 'pin_code': pinCode,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -12475,6 +12848,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Value<String>? name,
     Value<String?>? email,
     Value<String>? address,
+    Value<String?>? gstin,
+    Value<String?>? stateCode,
+    Value<String?>? pinCode,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -12485,6 +12861,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       name: name ?? this.name,
       email: email ?? this.email,
       address: address ?? this.address,
+      gstin: gstin ?? this.gstin,
+      stateCode: stateCode ?? this.stateCode,
+      pinCode: pinCode ?? this.pinCode,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -12509,6 +12888,15 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     if (address.present) {
       map['address'] = Variable<String>(address.value);
     }
+    if (gstin.present) {
+      map['gstin'] = Variable<String>(gstin.value);
+    }
+    if (stateCode.present) {
+      map['state_code'] = Variable<String>(stateCode.value);
+    }
+    if (pinCode.present) {
+      map['pin_code'] = Variable<String>(pinCode.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -12529,6 +12917,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('address: $address, ')
+          ..write('gstin: $gstin, ')
+          ..write('stateCode: $stateCode, ')
+          ..write('pinCode: $pinCode, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -14110,6 +14501,7 @@ typedef $$PurchaseOrderItemsTableCreateCompanionBuilder =
       required int quantity,
       required double unitPrice,
       required String productName,
+      Value<String?> hsnCode,
       required double taxRate,
       required double cessRate,
       Value<String?> uom,
@@ -14124,6 +14516,7 @@ typedef $$PurchaseOrderItemsTableUpdateCompanionBuilder =
       Value<int> quantity,
       Value<double> unitPrice,
       Value<String> productName,
+      Value<String?> hsnCode,
       Value<double> taxRate,
       Value<double> cessRate,
       Value<String?> uom,
@@ -14167,6 +14560,11 @@ class $$PurchaseOrderItemsTableFilterComposer
 
   ColumnFilters<String> get productName => $composableBuilder(
     column: $table.productName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14235,6 +14633,11 @@ class $$PurchaseOrderItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get taxRate => $composableBuilder(
     column: $table.taxRate,
     builder: (column) => ColumnOrderings(column),
@@ -14289,6 +14692,9 @@ class $$PurchaseOrderItemsTableAnnotationComposer
     column: $table.productName,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get hsnCode =>
+      $composableBuilder(column: $table.hsnCode, builder: (column) => column);
 
   GeneratedColumn<double> get taxRate =>
       $composableBuilder(column: $table.taxRate, builder: (column) => column);
@@ -14356,6 +14762,7 @@ class $$PurchaseOrderItemsTableTableManager
                 Value<int> quantity = const Value.absent(),
                 Value<double> unitPrice = const Value.absent(),
                 Value<String> productName = const Value.absent(),
+                Value<String?> hsnCode = const Value.absent(),
                 Value<double> taxRate = const Value.absent(),
                 Value<double> cessRate = const Value.absent(),
                 Value<String?> uom = const Value.absent(),
@@ -14368,6 +14775,7 @@ class $$PurchaseOrderItemsTableTableManager
                 quantity: quantity,
                 unitPrice: unitPrice,
                 productName: productName,
+                hsnCode: hsnCode,
                 taxRate: taxRate,
                 cessRate: cessRate,
                 uom: uom,
@@ -14382,6 +14790,7 @@ class $$PurchaseOrderItemsTableTableManager
                 required int quantity,
                 required double unitPrice,
                 required String productName,
+                Value<String?> hsnCode = const Value.absent(),
                 required double taxRate,
                 required double cessRate,
                 Value<String?> uom = const Value.absent(),
@@ -14394,6 +14803,7 @@ class $$PurchaseOrderItemsTableTableManager
                 quantity: quantity,
                 unitPrice: unitPrice,
                 productName: productName,
+                hsnCode: hsnCode,
                 taxRate: taxRate,
                 cessRate: cessRate,
                 uom: uom,
@@ -15268,6 +15678,7 @@ typedef $$GoodsReceiptItemsTableCreateCompanionBuilder =
       required String grnId,
       required String productId,
       required String productName,
+      Value<String?> hsnCode,
       required double orderedQty,
       required double receivedQty,
       required double rejectedQty,
@@ -15284,6 +15695,7 @@ typedef $$GoodsReceiptItemsTableUpdateCompanionBuilder =
       Value<String> grnId,
       Value<String> productId,
       Value<String> productName,
+      Value<String?> hsnCode,
       Value<double> orderedQty,
       Value<double> receivedQty,
       Value<double> rejectedQty,
@@ -15321,6 +15733,11 @@ class $$GoodsReceiptItemsTableFilterComposer
 
   ColumnFilters<String> get productName => $composableBuilder(
     column: $table.productName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15394,6 +15811,11 @@ class $$GoodsReceiptItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get orderedQty => $composableBuilder(
     column: $table.orderedQty,
     builder: (column) => ColumnOrderings(column),
@@ -15457,6 +15879,9 @@ class $$GoodsReceiptItemsTableAnnotationComposer
     column: $table.productName,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get hsnCode =>
+      $composableBuilder(column: $table.hsnCode, builder: (column) => column);
 
   GeneratedColumn<double> get orderedQty => $composableBuilder(
     column: $table.orderedQty,
@@ -15537,6 +15962,7 @@ class $$GoodsReceiptItemsTableTableManager
                 Value<String> grnId = const Value.absent(),
                 Value<String> productId = const Value.absent(),
                 Value<String> productName = const Value.absent(),
+                Value<String?> hsnCode = const Value.absent(),
                 Value<double> orderedQty = const Value.absent(),
                 Value<double> receivedQty = const Value.absent(),
                 Value<double> rejectedQty = const Value.absent(),
@@ -15551,6 +15977,7 @@ class $$GoodsReceiptItemsTableTableManager
                 grnId: grnId,
                 productId: productId,
                 productName: productName,
+                hsnCode: hsnCode,
                 orderedQty: orderedQty,
                 receivedQty: receivedQty,
                 rejectedQty: rejectedQty,
@@ -15567,6 +15994,7 @@ class $$GoodsReceiptItemsTableTableManager
                 required String grnId,
                 required String productId,
                 required String productName,
+                Value<String?> hsnCode = const Value.absent(),
                 required double orderedQty,
                 required double receivedQty,
                 required double rejectedQty,
@@ -15581,6 +16009,7 @@ class $$GoodsReceiptItemsTableTableManager
                 grnId: grnId,
                 productId: productId,
                 productName: productName,
+                hsnCode: hsnCode,
                 orderedQty: orderedQty,
                 receivedQty: receivedQty,
                 rejectedQty: rejectedQty,
@@ -16961,8 +17390,11 @@ typedef $$BillItemsTableCreateCompanionBuilder =
       required String billId,
       required String productId,
       required String productName,
+      Value<String?> hsnCode,
       required double quantity,
       required double unitPrice,
+      Value<double> taxRate,
+      Value<double> cessRate,
       required double taxAmount,
       required double totalAmount,
       Value<DateTime?> warrantyEndDate,
@@ -16974,8 +17406,11 @@ typedef $$BillItemsTableUpdateCompanionBuilder =
       Value<String> billId,
       Value<String> productId,
       Value<String> productName,
+      Value<String?> hsnCode,
       Value<double> quantity,
       Value<double> unitPrice,
+      Value<double> taxRate,
+      Value<double> cessRate,
       Value<double> taxAmount,
       Value<double> totalAmount,
       Value<DateTime?> warrantyEndDate,
@@ -17011,6 +17446,11 @@ class $$BillItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<double> get quantity => $composableBuilder(
     column: $table.quantity,
     builder: (column) => ColumnFilters(column),
@@ -17018,6 +17458,16 @@ class $$BillItemsTableFilterComposer
 
   ColumnFilters<double> get unitPrice => $composableBuilder(
     column: $table.unitPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cessRate => $composableBuilder(
+    column: $table.cessRate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17066,6 +17516,11 @@ class $$BillItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get hsnCode => $composableBuilder(
+    column: $table.hsnCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get quantity => $composableBuilder(
     column: $table.quantity,
     builder: (column) => ColumnOrderings(column),
@@ -17073,6 +17528,16 @@ class $$BillItemsTableOrderingComposer
 
   ColumnOrderings<double> get unitPrice => $composableBuilder(
     column: $table.unitPrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cessRate => $composableBuilder(
+    column: $table.cessRate,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -17115,11 +17580,20 @@ class $$BillItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get hsnCode =>
+      $composableBuilder(column: $table.hsnCode, builder: (column) => column);
+
   GeneratedColumn<double> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
   GeneratedColumn<double> get unitPrice =>
       $composableBuilder(column: $table.unitPrice, builder: (column) => column);
+
+  GeneratedColumn<double> get taxRate =>
+      $composableBuilder(column: $table.taxRate, builder: (column) => column);
+
+  GeneratedColumn<double> get cessRate =>
+      $composableBuilder(column: $table.cessRate, builder: (column) => column);
 
   GeneratedColumn<double> get taxAmount =>
       $composableBuilder(column: $table.taxAmount, builder: (column) => column);
@@ -17167,8 +17641,11 @@ class $$BillItemsTableTableManager
                 Value<String> billId = const Value.absent(),
                 Value<String> productId = const Value.absent(),
                 Value<String> productName = const Value.absent(),
+                Value<String?> hsnCode = const Value.absent(),
                 Value<double> quantity = const Value.absent(),
                 Value<double> unitPrice = const Value.absent(),
+                Value<double> taxRate = const Value.absent(),
+                Value<double> cessRate = const Value.absent(),
                 Value<double> taxAmount = const Value.absent(),
                 Value<double> totalAmount = const Value.absent(),
                 Value<DateTime?> warrantyEndDate = const Value.absent(),
@@ -17178,8 +17655,11 @@ class $$BillItemsTableTableManager
                 billId: billId,
                 productId: productId,
                 productName: productName,
+                hsnCode: hsnCode,
                 quantity: quantity,
                 unitPrice: unitPrice,
+                taxRate: taxRate,
+                cessRate: cessRate,
                 taxAmount: taxAmount,
                 totalAmount: totalAmount,
                 warrantyEndDate: warrantyEndDate,
@@ -17191,8 +17671,11 @@ class $$BillItemsTableTableManager
                 required String billId,
                 required String productId,
                 required String productName,
+                Value<String?> hsnCode = const Value.absent(),
                 required double quantity,
                 required double unitPrice,
+                Value<double> taxRate = const Value.absent(),
+                Value<double> cessRate = const Value.absent(),
                 required double taxAmount,
                 required double totalAmount,
                 Value<DateTime?> warrantyEndDate = const Value.absent(),
@@ -17202,8 +17685,11 @@ class $$BillItemsTableTableManager
                 billId: billId,
                 productId: productId,
                 productName: productName,
+                hsnCode: hsnCode,
                 quantity: quantity,
                 unitPrice: unitPrice,
+                taxRate: taxRate,
+                cessRate: cessRate,
                 taxAmount: taxAmount,
                 totalAmount: totalAmount,
                 warrantyEndDate: warrantyEndDate,
@@ -19438,6 +19924,9 @@ typedef $$CustomersTableCreateCompanionBuilder =
       required String name,
       Value<String?> email,
       required String address,
+      Value<String?> gstin,
+      Value<String?> stateCode,
+      Value<String?> pinCode,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -19449,6 +19938,9 @@ typedef $$CustomersTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String?> email,
       Value<String> address,
+      Value<String?> gstin,
+      Value<String?> stateCode,
+      Value<String?> pinCode,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -19485,6 +19977,21 @@ class $$CustomersTableFilterComposer
 
   ColumnFilters<String> get address => $composableBuilder(
     column: $table.address,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gstin => $composableBuilder(
+    column: $table.gstin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stateCode => $composableBuilder(
+    column: $table.stateCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pinCode => $composableBuilder(
+    column: $table.pinCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19533,6 +20040,21 @@ class $$CustomersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get gstin => $composableBuilder(
+    column: $table.gstin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stateCode => $composableBuilder(
+    column: $table.stateCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pinCode => $composableBuilder(
+    column: $table.pinCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -19567,6 +20089,15 @@ class $$CustomersTableAnnotationComposer
 
   GeneratedColumn<String> get address =>
       $composableBuilder(column: $table.address, builder: (column) => column);
+
+  GeneratedColumn<String> get gstin =>
+      $composableBuilder(column: $table.gstin, builder: (column) => column);
+
+  GeneratedColumn<String> get stateCode =>
+      $composableBuilder(column: $table.stateCode, builder: (column) => column);
+
+  GeneratedColumn<String> get pinCode =>
+      $composableBuilder(column: $table.pinCode, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -19608,6 +20139,9 @@ class $$CustomersTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String?> email = const Value.absent(),
                 Value<String> address = const Value.absent(),
+                Value<String?> gstin = const Value.absent(),
+                Value<String?> stateCode = const Value.absent(),
+                Value<String?> pinCode = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -19617,6 +20151,9 @@ class $$CustomersTableTableManager
                 name: name,
                 email: email,
                 address: address,
+                gstin: gstin,
+                stateCode: stateCode,
+                pinCode: pinCode,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -19628,6 +20165,9 @@ class $$CustomersTableTableManager
                 required String name,
                 Value<String?> email = const Value.absent(),
                 required String address,
+                Value<String?> gstin = const Value.absent(),
+                Value<String?> stateCode = const Value.absent(),
+                Value<String?> pinCode = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -19637,6 +20177,9 @@ class $$CustomersTableTableManager
                 name: name,
                 email: email,
                 address: address,
+                gstin: gstin,
+                stateCode: stateCode,
+                pinCode: pinCode,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

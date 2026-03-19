@@ -116,7 +116,7 @@ class _VendorDetailsViewState extends State<VendorDetailsView> {
             id: dn.id,
             date: dn.date,
             type: _TransactionType.debitNote,
-            reference: 'DN-${dn.id.substring(0, 8)}',
+            reference: 'DN-${dn.id.length > 8 ? dn.id.substring(0, 8) : dn.id}',
             amount: dn.amount,
             description: dn.reason,
             status: dn.status,

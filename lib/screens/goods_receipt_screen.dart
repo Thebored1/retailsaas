@@ -117,6 +117,7 @@ class _GoodsReceiptScreenState extends State<GoodsReceiptScreen> {
         taxRate: item.taxRate + item.cessRate,
         uom: item.uom,
         conversionFactor: item.conversionFactor,
+        hsnCode: item.hsnCode,
       );
     });
 
@@ -193,6 +194,7 @@ class _GoodsReceiptScreenState extends State<GoodsReceiptScreen> {
           taxRate: item.taxRate,
           uom: item.uom,
           conversionFactor: item.conversionFactor,
+          hsnCode: item.hsnCode,
         );
       }).toList();
     });
@@ -1150,6 +1152,7 @@ class _GoodsReceiptScreenState extends State<GoodsReceiptScreen> {
                 taxRate: drift.Value(item.taxRate),
                 uom: drift.Value(item.uom),
                 conversionFactor: drift.Value(item.conversionFactor),
+                hsnCode: drift.Value(item.hsnCode),
               ),
             );
       }
@@ -1484,6 +1487,7 @@ class GrnItem {
   double mrp; // Added
   String? batchNumber;
   DateTime? expiryDate;
+  String? hsnCode;
 
   GrnItem({
     required this.id,
@@ -1500,6 +1504,7 @@ class GrnItem {
     this.uom,
     this.conversionFactor = 1.0,
     this.availableUoms = const [],
+    this.hsnCode,
   });
 
   String? uom;

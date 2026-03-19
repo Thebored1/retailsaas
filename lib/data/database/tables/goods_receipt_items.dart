@@ -5,6 +5,7 @@ class GoodsReceiptItems extends Table {
   TextColumn get grnId => text()(); // Foreign key to GoodsReceipts
   TextColumn get productId => text()();
   TextColumn get productName => text()(); // Store name snapshot
+  TextColumn get hsnCode => text().nullable()(); // Snapshot of HSN
   RealColumn get orderedQty =>
       real()(); // Snapshot of what was ordered at that time (obs) or ref
   RealColumn get receivedQty => real()();
