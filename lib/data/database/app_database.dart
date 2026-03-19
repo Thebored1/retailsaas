@@ -32,6 +32,7 @@ import 'tables/product_uoms.dart';
 import 'tables/users.dart';
 import 'tables/audit_logs.dart';
 import 'tables/accounts.dart';
+import 'tables/customers.dart';
 
 part 'app_database.g.dart';
 
@@ -61,13 +62,14 @@ part 'app_database.g.dart';
     Users,
     AuditLogs,
     Accounts,
+    Customers,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 29;
 
   @override
   MigrationStrategy get migration {
@@ -81,6 +83,12 @@ class AppDatabase extends _$AppDatabase {
         }
       },
       onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 29) {
+          await m.addColumn(salesBills, salesBills.customerId);
+        }
+        if (from < 28) {
+          await m.createTable(customers);
+        }
         if (from < 27) {
           await m.createTable(accounts);
         }

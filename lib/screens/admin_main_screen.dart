@@ -9,6 +9,11 @@ import 'package:retailsaas/screens/purchase_order_list_screen.dart';
 import 'package:retailsaas/screens/stock_adjustment_screen.dart';
 import 'package:retailsaas/screens/vendor_management_screen.dart';
 import 'package:retailsaas/screens/vendor_payment_screen.dart';
+import 'package:retailsaas/screens/customer_management_screen.dart';
+import 'package:retailsaas/screens/delivery_slots_screen.dart';
+import 'package:retailsaas/screens/delivery_agent_accounts_screen.dart';
+import 'package:retailsaas/screens/online_orders_management_screen.dart';
+import 'package:retailsaas/screens/settings_screen.dart';
 import 'package:retailsaas/widgets/admin_side_menu.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:retailsaas/screens/audit_logs_screen.dart';
@@ -111,8 +116,18 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
           // Pass callback to allow dashboard to switch views (e.g. clicking a card)
           onNavigate: _handleItemSelected,
         );
+      case 'Settings':
+        return const SettingsScreen();
       case 'Vendor Management':
         return const VendorManagementScreen();
+      case 'Online Customers':
+        return const CustomerManagementScreen();
+      case 'Delivery Slots':
+        return const DeliverySlotsScreen();
+      case 'Delivery Agents':
+        return const DeliveryAgentAccountsScreen();
+      case 'Manage Orders':
+        return const OnlineOrdersManagementScreen();
       case 'Vendor Payments':
         return const VendorPaymentScreen();
       // Add other cases here as we build them, or default placeholders

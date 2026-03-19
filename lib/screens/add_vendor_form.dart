@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 import '../models/vendor.dart';
@@ -410,6 +411,7 @@ class _AddVendorFormState extends State<AddVendorForm> {
                     label: 'Mobile Number',
                     keyboardType: TextInputType.phone,
                     maxLength: 10,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Required';
                       if (v.length != 10) return 'Must be 10 digits';
@@ -632,6 +634,7 @@ class _AddVendorFormState extends State<AddVendorForm> {
     String? Function(String?)? validator,
     TextInputType? keyboardType,
     int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
     TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     return Column(
@@ -648,6 +651,7 @@ class _AddVendorFormState extends State<AddVendorForm> {
           validator: validator,
           keyboardType: keyboardType,
           maxLength: maxLength,
+          inputFormatters: inputFormatters,
           textCapitalization: textCapitalization,
           decoration: InputDecoration(
             counterText: "", // Hide character counter

@@ -26,6 +26,16 @@ class _AdminSideMenuState extends State<AdminSideMenu> {
   // Enhanced categories with Icons
   final List<_AdminCategory> _menuItems = [
     _AdminCategory(
+      title: 'Webfront',
+      icon: Icons.storefront_outlined,
+      items: [
+        'Manage Orders',
+        'Delivery Slots',
+        'Delivery Agents',
+        'Online Customers',
+      ],
+    ),
+    _AdminCategory(
       title: 'Inventory & Supply',
       icon: Icons.inventory_2_outlined,
       items: [
@@ -55,12 +65,13 @@ class _AdminSideMenuState extends State<AdminSideMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      child: SizedBox(
-        width: 260,
-        child: Column(
-          children: [
+    return ExcludeFocusTraversal(
+      child: Material(
+        color: Colors.white,
+        child: SizedBox(
+          width: 290,
+          child: Column(
+            children: [
             const SizedBox(height: 24),
             // Header / Logo
             Padding(
@@ -71,7 +82,7 @@ class _AdminSideMenuState extends State<AdminSideMenu> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: Colors.black, // Dark theme logo bg
+                      color: Colors.black,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Center(
@@ -95,22 +106,25 @@ class _AdminSideMenuState extends State<AdminSideMenu> {
               ),
             ),
             const SizedBox(height: 32),
-
             // Menu Items
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  // Overview
                   _buildSingleMenuItem(
                     icon: Icons.grid_view,
                     label: 'Dashboard',
                     isSelected: widget.selectedItem == 'Dashboard',
                     onTap: () => widget.onItemSelected('Dashboard'),
                   ),
+                  const SizedBox(height: 4),
+                  _buildSingleMenuItem(
+                    icon: Icons.settings_outlined,
+                    label: 'Settings',
+                    isSelected: widget.selectedItem == 'Settings',
+                    onTap: () => widget.onItemSelected('Settings'),
+                  ),
                   const SizedBox(height: 8),
-
-                  // Dynamic Categories
                   ..._menuItems.map((category) {
                     return _buildCategoryTile(category);
                   }),
@@ -259,6 +273,7 @@ class _AdminSideMenuState extends State<AdminSideMenu> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -380,6 +395,7 @@ class _AdminSideMenuState extends State<AdminSideMenu> {
               ),
             Text(
               label,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,

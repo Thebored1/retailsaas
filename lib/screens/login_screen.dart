@@ -108,9 +108,12 @@ class _LoginScreenState extends State<LoginScreen> {
               // Inputs
               TextField(
                 controller: _usernameCtrl,
+                keyboardType: TextInputType.text,
+                maxLength: 10,
                 decoration: InputDecoration(
-                  labelText: 'Username',
-                  hintText: 'Enter your username',
+                  labelText: '10-Digit Phone Number',
+                  hintText: 'Enter your phone number',
+                  counterText: '',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey.shade300),
@@ -119,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey.shade300),
                   ),
-                  prefixIcon: const Icon(Icons.person_outline),
+                  prefixIcon: const Icon(Icons.phone_android),
                 ),
               ),
               const SizedBox(height: 16),

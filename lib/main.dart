@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'locator.dart';
 import 'screens/login_screen.dart';
+import 'services/auto_sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator();
+  getIt<AutoSyncService>().start();
 
   runApp(const MyApp());
 }

@@ -20,6 +20,7 @@ import 'package:drift/drift.dart' hide Column;
 import '../locator.dart';
 import '../data/database/app_database.dart';
 import 'package:uuid/uuid.dart';
+import '../services/settings_service.dart';
 
 class PurchaseOrderScreen extends StatefulWidget {
   final VoidCallback? onBack;
@@ -34,6 +35,7 @@ class PurchaseOrderScreen extends StatefulWidget {
 class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
   final AppDatabase _db = getIt<AppDatabase>();
   final _uuid = const Uuid();
+  final SettingsService _settings = getIt<SettingsService>();
 
   // Selected items for the PO (UI state)
   // We will keep using Map for selected items to store 'qty' and snapshot data
@@ -50,17 +52,18 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
   String? _currentPoId;
   String _currentPoNumber = '';
 
-  // Company Details (Static for now, could be in DB)
-  final Map<String, dynamic> _company = {
-    'name': 'Jiyalal Stores',
-    'address': 'Plot 42, Industrial Area,\nMumbai, Maharashtra - 400001',
-    'gstin': '27ABCDE1234F1Z1',
-    'stateCode': '27',
-  };
+  // Company Details (from Settings)
+  String _companyName = '';
+  String _companyPhone = '';
+  String _companyEmail = '';
+  String _companyGstin = '';
+  String _companyStateCode = '';
+  String _companyAddress = '';
 
   @override
   void initState() {
     super.initState();
+    _loadCompanySettings();
     _currentPoId = widget.existingOrderId;
     if (_currentPoId != null) {
       _loadExistingOrder();
@@ -69,6 +72,42 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
       _currentPoNumber =
           'PO-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
     }
+  }
+
+  Future<void> _loadCompanySettings() async {
+    final data = await _settings.loadAll();
+    final line1 = (data['addrLine1'] ?? '').toString().trim();
+    final line2 = (data['addrLine2'] ?? '').toString().trim();
+    final city = (data['addrCity'] ?? '').toString().trim();
+    final state = (data['addrState'] ?? '').toString().trim();
+    final pin = (data['addrPin'] ?? '').toString().trim();
+    final country = (data['addrCountry'] ?? '').toString().trim();
+
+    final addressLines = <String>[];
+    if (line1.isNotEmpty) addressLines.add(line1);
+    if (line2.isNotEmpty) addressLines.add(line2);
+
+    final cityStatePin = [
+      if (city.isNotEmpty) city,
+      if (state.isNotEmpty) state,
+    ].join(', ');
+
+    if (cityStatePin.isNotEmpty || pin.isNotEmpty) {
+      final suffix = pin.isNotEmpty ? ' - $pin' : '';
+      addressLines.add('$cityStatePin$suffix'.trim());
+    }
+
+    if (country.isNotEmpty) addressLines.add(country);
+
+    if (!mounted) return;
+    setState(() {
+      _companyName = (data['shopName'] ?? '').toString().trim();
+      _companyPhone = (data['shopPhone'] ?? '').toString().trim();
+      _companyEmail = (data['shopEmail'] ?? '').toString().trim();
+      _companyGstin = (data['shopGstin'] ?? '').toString().trim();
+      _companyStateCode = (data['shopStateCode'] ?? '').toString().trim();
+      _companyAddress = addressLines.join('\n');
+    });
   }
 
   Future<void> _loadExistingOrder() async {
@@ -1236,7 +1275,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                       await Printing.sharePdf(
                         bytes: pdfBytes,
                         filename: 'purchase_order.pdf',
-                        subject: 'Purchase Order from ${_company['name']}',
+                        subject: 'Purchase Order from $_companyName',
                         body: 'Please find attached the Purchase Order.',
                         emails: recipients,
                       );
@@ -1416,7 +1455,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  _company['name'],
+                                  _companyName,
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -1425,7 +1464,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  _company['address'],
+                                  _companyAddress,
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: Colors.grey.shade600,
@@ -1434,14 +1473,14 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'GSTIN: ${_company['gstin']}',
+                                  'GSTIN: $_companyGstin',
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
                                     color: Colors.grey.shade500,
                                   ),
                                 ),
                                 Text(
-                                  'State Code: ${_company['stateCode']}',
+                                  'State Code: $_companyStateCode',
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
                                     color: Colors.grey.shade500,
@@ -1706,14 +1745,14 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            _company['name'], // Replaced hardcoded name
+                            _companyName,
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            '(+91) 99887 76655', // Hardcoded as fallback or standard
+                            _companyPhone.isNotEmpty ? _companyPhone : '',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: Colors.grey.shade500,
@@ -1800,7 +1839,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
   String _getTaxType() {
     if (_selectedVendor == null) return 'IGST';
     final vendorState = _selectedVendor!.stateCode;
-    final companyState = _company['stateCode'];
+    final companyState = _companyStateCode;
     return (vendorState == companyState) ? 'CGST_SGST' : 'IGST';
   }
 
@@ -2009,23 +2048,23 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                     ),
                     pw.SizedBox(height: 4),
                     pw.Text(
-                      _company['name'],
+                      _companyName,
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
                     pw.Text(
-                      _company['address'],
+                      _companyAddress,
                       style: const pw.TextStyle(fontSize: 10),
                     ),
                     pw.SizedBox(height: 4),
                     pw.Text(
-                      'GSTIN: ${_company['gstin']}',
+                      'GSTIN: $_companyGstin',
                       style: pw.TextStyle(
                         fontSize: 10,
                         fontWeight: pw.FontWeight.bold,
                       ),
                     ),
                     pw.Text(
-                      'State Code: ${_company['stateCode']}',
+                      'State Code: $_companyStateCode',
                       style: const pw.TextStyle(fontSize: 10),
                     ),
                   ],
@@ -2303,14 +2342,14 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'Jiyalal Stores, IND',
+                _companyName.isNotEmpty ? _companyName : 'Company',
                 style: pw.TextStyle(
                   fontSize: 10,
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
               pw.Text(
-                '(+91) 99887 76655',
+                _companyPhone.isNotEmpty ? _companyPhone : '',
                 style: const pw.TextStyle(
                   fontSize: 10,
                   color: PdfColors.grey600,

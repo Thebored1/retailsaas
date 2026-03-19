@@ -1,13 +1,402 @@
+import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:retailsaas/data/database/app_database.dart';
 import 'package:retailsaas/locator.dart';
+import 'package:retailsaas/services/settings_service.dart';
+import 'package:retailsaas/services/sync_service.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
+class AdminDashboardScreen extends StatefulWidget {
   final Function(String)? onNavigate;
 
   const AdminDashboardScreen({super.key, this.onNavigate});
+
+  @override
+  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+  bool _isLoadingPending = false;
+  bool _isSubmittingDecision = false;
+  String? _pendingOrdersError;
+  List<Map<String, dynamic>> _pendingOrders = [];
+  bool _isLoadingSlots = false;
+  List<_DeliverySlotOption> _deliverySlots = [];
+  Timer? _ordersRefreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPendingOrders();
+    _loadDeliverySlots();
+    _ordersRefreshTimer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => _loadPendingOrders(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ordersRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadPendingOrders() async {
+    if (_isLoadingPending) return;
+    setState(() {
+      _isLoadingPending = true;
+      _pendingOrdersError = null;
+    });
+
+    try {
+      final syncService = getIt<SyncService>();
+      final orders = await syncService.pullPendingOrders();
+      if (!mounted) return;
+
+      setState(() {
+        _pendingOrders = orders;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _pendingOrdersError = e.toString();
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingPending = false;
+      });
+    }
+  }
+
+  Future<void> _loadDeliverySlots() async {
+    if (_isLoadingSlots) return;
+    setState(() => _isLoadingSlots = true);
+    try {
+      final raw = await getIt<SettingsService>().loadDeliverySlots();
+      final slots = raw.map(_DeliverySlotOption.fromJson).toList();
+      slots.sort((a, b) => a.startTime.compareTo(b.startTime));
+      if (!mounted) return;
+      setState(() {
+        _deliverySlots = slots;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _deliverySlots = [];
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() => _isLoadingSlots = false);
+    }
+  }
+
+  Future<void> _openAcceptDialog(Map<String, dynamic> order) async {
+    if (_deliverySlots.isEmpty && !_isLoadingSlots) {
+      await _loadDeliverySlots();
+    }
+
+    final expectedText = (order['expected_delivery_text'] ?? '').toString();
+    final expectedStart = (order['expected_delivery_start'] ?? '').toString();
+    final expectedEnd = (order['expected_delivery_end'] ?? '').toString();
+    final initialDate = _parseDate(order['delivery_date']) ??
+        DateTime.now().add(const Duration(days: 1));
+
+    final activeSlots = _deliverySlots.where((s) => s.isActive).toList();
+    _DeliverySlotOption? selectedSlot;
+    if (activeSlots.isNotEmpty) {
+      selectedSlot = activeSlots.firstWhere(
+        (slot) =>
+            slot.startTime == expectedStart &&
+            slot.endTime == expectedEnd,
+        orElse: () => activeSlots.first,
+      );
+    }
+
+    bool outForDelivery = false;
+    DateTime selectedDate = initialDate;
+    final dateController = TextEditingController(
+      text: _formatDateForDisplay(selectedDate),
+    );
+    String? errorText;
+
+    final result = await showDialog<_AcceptDecisionResult>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Accept Order #${_parseOrderId(order) ?? ''}'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (expectedText.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        'Expected: $expectedText',
+                        style: GoogleFonts.inter(fontSize: 12),
+                      ),
+                    ),
+                  if (activeSlots.isEmpty)
+                    Text(
+                      'No delivery slots configured. Add slots in Webfront > Delivery Slots.',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.red.shade700,
+                      ),
+                    )
+                  else
+                    DropdownButtonFormField<_DeliverySlotOption>(
+                      value: selectedSlot,
+                      decoration: const InputDecoration(
+                        labelText: 'Delivery slot',
+                      ),
+                      items: activeSlots
+                          .map(
+                            (slot) => DropdownMenuItem(
+                              value: slot,
+                              child: Text(slot.displayLabel),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSlot = value;
+                          errorText = null;
+                        });
+                      },
+                    ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    readOnly: true,
+                    controller: dateController,
+                    decoration: const InputDecoration(
+                      labelText: 'Delivery date',
+                    ),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 30)),
+                      );
+                      if (picked == null) return;
+                      setDialogState(() {
+                        selectedDate = picked;
+                        dateController.text =
+                            _formatDateForDisplay(selectedDate);
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Mark as out for delivery'),
+                    value: outForDelivery,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        outForDelivery = value ?? false;
+                      });
+                    },
+                  ),
+                  if (errorText != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      errorText!,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: activeSlots.isEmpty
+                      ? null
+                      : () {
+                          if (selectedSlot == null) {
+                            setDialogState(() {
+                              errorText = 'Select a delivery slot to continue.';
+                            });
+                            return;
+                          }
+                          Navigator.pop(
+                            context,
+                            _AcceptDecisionResult(
+                              slot: selectedSlot!,
+                              displayText: selectedSlot!.displayLabel,
+                              deliveryDate: selectedDate,
+                              outForDelivery: outForDelivery,
+                            ),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Accept Order'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null) return;
+    await _submitOrderDecisionFor(
+      order,
+      'ACCEPT',
+      deliverySlot: result.slot,
+      deliverySlotText: result.displayText,
+      deliveryDate: result.deliveryDate,
+      outForDelivery: result.outForDelivery,
+    );
+  }
+
+  Future<void> _submitOrderDecisionFor(
+    Map<String, dynamic> order,
+    String decision, {
+    _DeliverySlotOption? deliverySlot,
+    String? deliverySlotText,
+    bool outForDelivery = false,
+    DateTime? deliveryDate,
+  }
+  ) async {
+    if (_isSubmittingDecision) return;
+
+    setState(() {
+      _isSubmittingDecision = true;
+    });
+
+    try {
+      final orderId = _parseOrderId(order);
+      if (orderId == null) {
+        throw Exception('Invalid order id');
+      }
+
+      double? finalTotal;
+      if (decision == 'ACCEPT') {
+        finalTotal = _parseDouble(order['estimated_total']);
+      }
+
+      await getIt<SyncService>().sendOrderDecision(
+        orderId: orderId,
+        decision: decision,
+        finalTotal: finalTotal,
+        deliverySlotLabel: deliverySlot?.label,
+        deliverySlotStart: deliverySlot?.startTime,
+        deliverySlotEnd: deliverySlot?.endTime,
+        deliverySlotText: deliverySlotText ?? deliverySlot?.displayLabel,
+        outForDelivery: decision == 'ACCEPT' ? outForDelivery : null,
+        deliveryDate: deliveryDate == null ? null : _formatDateForApi(deliveryDate),
+      );
+      if (decision == 'ACCEPT') {
+        await getIt<SyncService>().createSaleFromWebOrder(order);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              decision == 'ACCEPT'
+                  ? 'Order accepted successfully.'
+                  : 'Order cancelled successfully.',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      await _loadPendingOrders();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update order: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isSubmittingDecision = false;
+      });
+    }
+  }
+
+
+  int? _parseOrderId(Map<String, dynamic> order) {
+    final raw = order['order_id'];
+    if (raw is int) return raw;
+    return int.tryParse(raw.toString());
+  }
+
+  double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+  List<dynamic> _extractItems(dynamic items) {
+    if (items is List) return items;
+    if (items is Map && items['items'] is List) {
+      return items['items'] as List;
+    }
+    return [];
+  }
+
+  String _formatItemLabel(dynamic item) {
+    if (item is Map) {
+      final name = item['product_name'] ??
+          item['productName'] ??
+          item['name'] ??
+          'Item';
+      final qty = item['quantity'] ?? item['qty'];
+      if (qty != null) {
+        return '$name x $qty';
+      }
+      return name.toString();
+    }
+    return item.toString();
+  }
+
+  String _formatOrderDate(dynamic value) {
+    if (value == null) return '';
+    if (value is DateTime) return value.toString();
+    return value.toString();
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    try {
+      return DateTime.parse(value.toString());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _formatDateForDisplay(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDateForApi(DateTime date) {
+    return _formatDateForDisplay(date);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +404,6 @@ class AdminDashboardScreen extends StatelessWidget {
     final db = getIt<AppDatabase>();
 
     // Mock Data for Charts (Sales data not yet available in DB)
-    final double todaysSales = 15430.00;
     final double onlineSales = 3086.0; // 20%
     final double offlineSales = 12344.0; // 80%
 
@@ -67,13 +455,14 @@ class AdminDashboardScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        // Notification Banner (Compact)
-                        StreamBuilder<int>(
-                          stream: db.watchPendingPurchaseOrdersCount(),
-                          builder: (context, snapshot) {
-                            final pendingOrders = snapshot.data ?? 0;
-                            return _buildCompactNotification(pendingOrders);
-                          },
+                        // Actions Row (Notifications)
+                        Row(
+                          children: [
+                            _buildCompactNotification(
+                              _pendingOrders.length,
+                              label: 'Online Orders Pending',
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -92,19 +481,18 @@ class AdminDashboardScreen extends StatelessWidget {
                                 final totalInventoryValue =
                                     snapshotInv.data ?? 0.0;
                                 final lowStockItems = snapshotLow.data ?? 0;
-                                final pendingDebitNotes =
-                                    snapshotDebit.data ?? 0;
+                                final pendingDebitNotes = snapshotDebit.data ?? 0;
 
                                 final metrics = [
                                   _buildMetricCard(
                                     title: 'Total Inventory',
                                     value:
-                                        '₹${totalInventoryValue.toStringAsFixed(0)}',
+                                        'INR ${totalInventoryValue.toStringAsFixed(0)}',
                                     icon: Icons.inventory_2_outlined,
                                   ),
                                   _buildMetricCard(
                                     title: 'Low Stock',
-                                    value: '$lowStockItems Items',
+                                    value: '${lowStockItems} Items',
                                     icon: Icons.warning_amber_rounded,
                                     isAlert: true,
                                   ),
@@ -114,18 +502,18 @@ class AdminDashboardScreen extends StatelessWidget {
                                       final sales = snapshotSales.data ?? 0.0;
                                       return _buildMetricCard(
                                         title: 'Today\'s Sales',
-                                        value: '₹${sales.toStringAsFixed(0)}',
+                                        value: 'INR ${sales.toStringAsFixed(0)}',
                                         icon: Icons.attach_money,
                                       );
                                     },
                                   ),
                                   _buildMetricCard(
                                     title: 'Pending Debit Notes',
-                                    value: '$pendingDebitNotes',
+                                    value: '${pendingDebitNotes}',
                                     icon: Icons.assignment_return_outlined,
                                     isAlert: false,
                                     onTap: () =>
-                                        onNavigate?.call('Debit Notes'),
+                                        widget.onNavigate?.call('Debit Notes'),
                                   ),
                                 ];
 
@@ -190,7 +578,7 @@ class AdminDashboardScreen extends StatelessWidget {
                                     color: Colors.grey.shade200,
                                   ),
                                 ),
-                                child: _buildRevenueChartContent(todaysSales),
+                                child: _buildPendingOrdersPanelContent(),
                               )
                             : Expanded(
                                 flex: 2,
@@ -204,14 +592,7 @@ class AdminDashboardScreen extends StatelessWidget {
                                       color: Colors.grey.shade200,
                                     ),
                                   ),
-                                  child: StreamBuilder<double>(
-                                    stream: db.watchTodaysSales(),
-                                    builder: (context, snapshotSales) {
-                                      return _buildRevenueChartContent(
-                                        snapshotSales.data ?? 0.0,
-                                      );
-                                    },
-                                  ),
+                                  child: _buildPendingOrdersPanelContent(),
                                 ),
                               ),
 
@@ -306,7 +687,7 @@ class AdminDashboardScreen extends StatelessWidget {
                                   context,
                                   title: 'Sales & CRM',
                                   items: [
-                                    'Customer Management',
+                                    'Online Customers',
                                     'Sales Returns',
                                     'Loyalty Program',
                                     'Quotations',
@@ -318,7 +699,7 @@ class AdminDashboardScreen extends StatelessWidget {
                                   context,
                                   title: 'Sales & CRM',
                                   items: [
-                                    'Customer Management',
+                                    'Online Customers',
                                     'Sales Returns',
                                     'Loyalty Program',
                                     'Quotations',
@@ -371,70 +752,201 @@ class AdminDashboardScreen extends StatelessWidget {
 
   // --- Widgets ---
 
-  Widget _buildRevenueChartContent(double todaysSales) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: getIt<AppDatabase>().getMonthlySales(DateTime.now().year),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
 
-        final salesData = snapshot.data!;
-        // Fill 12 months
-        final monthlyTotals = List<double>.filled(12, 0.0);
-        for (final row in salesData) {
-          final month = row['month'] as int; // 1-12
-          if (month >= 1 && month <= 12) {
-            monthlyTotals[month - 1] = row['total'] as double;
-          }
-        }
-
-        final totalYearly = monthlyTotals.fold(0.0, (sum, val) => sum + val);
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildPendingOrdersPanelContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Text(
+              'Pending Online Orders',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Revenue (YTD)',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '₹${totalYearly.toStringAsFixed(0)}',
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    _buildChartLegendItem(
-                      color: Colors.black,
-                      label: DateTime.now().year.toString(),
-                    ),
-                  ],
+                if (_isLoadingPending) ...[
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                TextButton.icon(
+                  onPressed: _isLoadingPending ? null : _loadPendingOrders,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Refresh'),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Expanded(child: _buildBarChart(monthlyTotals)),
           ],
-        );
-      },
+        ),
+        if (_pendingOrdersError != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            'Failed to load orders: ${_pendingOrdersError}',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: Colors.red.shade700,
+            ),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Expanded(
+          child: _pendingOrders.isEmpty
+              ? Center(
+                  child: Text(
+                    'No pending online orders.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  itemCount: _pendingOrders.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
+                  itemBuilder: (context, index) =>
+                      _buildPendingOrderRow(_pendingOrders[index]),
+                ),
+        ),
+      ],
     );
   }
 
+  Widget _buildPendingOrderRow(Map<String, dynamic> order) {
+    final orderId = _parseOrderId(order) ?? 0;
+    final items = _extractItems(order['items']);
+    final estimatedTotal = _parseDouble(order['estimated_total']);
+    final createdAt = _formatOrderDate(order['created_at']);
+    final expectedText = (order['expected_delivery_text'] ?? '').toString();
+    final itemPreview = items.take(4).map(_formatItemLabel).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Order #${orderId}',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (estimatedTotal != null)
+                Text(
+                  'INR ${estimatedTotal.toStringAsFixed(2)}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          if (itemPreview.isEmpty)
+            Text(
+              'No items found.',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: Colors.grey.shade700,
+              ),
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: itemPreview
+                  .map(
+                    (label) => Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        '- ${label}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          if (items.length > 4)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                '+${items.length - 4} more items',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+          if (createdAt.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Placed: ${createdAt}',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+          if (expectedText.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Expected: ${expectedText}',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: _isSubmittingDecision
+                    ? null
+                    : () => _submitOrderDecisionFor(order, 'REJECT'),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _isSubmittingDecision
+                    ? null
+                    : () => _openAcceptDialog(order),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: const Text('Accept'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildPieChartContent(double onlineSales, double offlineSales) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -494,78 +1006,6 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBarChart(List<double> data) {
-    return BarChart(
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: 20000,
-        barTouchData: BarTouchData(enabled: false),
-        titlesData: FlTitlesData(
-          show: true,
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 30,
-              getTitlesWidget: (value, meta) {
-                if (value == 0) return const SizedBox.shrink();
-                return Text(
-                  '${(value / 1000).toInt()}k',
-                  style: GoogleFonts.inter(color: Colors.grey, fontSize: 10),
-                );
-              },
-              interval: 5000,
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                const titles = [
-                  'Jan',
-                  'Feb',
-                  'Mar',
-                  'Apr',
-                  'May',
-                  'Jun',
-                  'Jul',
-                  'Aug',
-                  'Sep',
-                  'Oct',
-                  'Nov',
-                  'Dec',
-                ];
-                if (value.toInt() < 0 || value.toInt() >= titles.length)
-                  return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    titles[value.toInt()],
-                    style: GoogleFonts.inter(color: Colors.grey, fontSize: 10),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          horizontalInterval: 5000,
-          getDrawingHorizontalLine: (value) =>
-              FlLine(color: Colors.grey.shade300, strokeWidth: 1),
-        ),
-        borderData: FlBorderData(show: false),
-        barGroups: _generateBarGroups(data),
-      ),
-    );
-  }
-
   Widget _buildManagementCard(
     BuildContext context, {
     required String title,
@@ -598,8 +1038,8 @@ class AdminDashboardScreen extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 12.0),
               child: InkWell(
                 onTap: () {
-                  if (onNavigate != null) {
-                    onNavigate!(item);
+                  if (widget.onNavigate != null) {
+                    widget.onNavigate!(item);
                   }
                 },
                 child: Row(
@@ -627,7 +1067,7 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactNotification(int count) {
+  Widget _buildCompactNotification(int count, {String label = 'Orders Pending'}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -640,7 +1080,7 @@ class AdminDashboardScreen extends StatelessWidget {
           const Icon(Icons.notifications_active, color: Colors.white, size: 16),
           const SizedBox(width: 8),
           Text(
-            '$count Orders Pending',
+            '$count $label',
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -703,37 +1143,6 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  List<BarChartGroupData> _generateBarGroups(List<double> data) {
-    return List.generate(data.length, (index) {
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: data[index],
-            color: Colors.black,
-            width: 8,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ],
-        barsSpace: 4,
-      );
-    });
-  }
-
-  Widget _buildChartLegendItem({required Color color, required String label}) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Text(label, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
-      ],
-    );
-  }
-
   Widget _buildDarkLegendItem({required Color color, required String label}) {
     return Row(
       children: [
@@ -755,3 +1164,52 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 }
+
+class _DeliverySlotOption {
+  final String id;
+  final String label;
+  final String startTime;
+  final String endTime;
+  final bool isActive;
+
+  const _DeliverySlotOption({
+    required this.id,
+    required this.label,
+    required this.startTime,
+    required this.endTime,
+    required this.isActive,
+  });
+
+  String get displayLabel {
+    if (label.isEmpty) {
+      return '$startTime - $endTime';
+    }
+    return '$label ($startTime - $endTime)';
+  }
+
+  factory _DeliverySlotOption.fromJson(Map<String, dynamic> json) {
+    return _DeliverySlotOption(
+      id: json['id']?.toString() ?? '',
+      label: json['label']?.toString() ?? '',
+      startTime: json['startTime']?.toString() ?? '',
+      endTime: json['endTime']?.toString() ?? '',
+      isActive: json['isActive'] == true,
+    );
+  }
+}
+
+class _AcceptDecisionResult {
+  final _DeliverySlotOption slot;
+  final String displayText;
+  final DateTime deliveryDate;
+  final bool outForDelivery;
+
+  const _AcceptDecisionResult({
+    required this.slot,
+    required this.displayText,
+    required this.deliveryDate,
+    required this.outForDelivery,
+  });
+}
+
+
