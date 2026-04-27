@@ -1,14 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
+import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 import '../locator.dart';
+import '../utils/image_helper.dart';
+import 'dart:convert';
 import '../data/database/app_database.dart';
 import '../models/product_inventory_view.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+
+/// Processes image bytes off the UI thread: decodes, resizes to max 800x800, and encodes to JPEG.
+Uint8List _processImageBytes(Uint8List bytes) {
+  final decoded = img.decodeImage(bytes);
+  if (decoded == null) return bytes;
+
+  // Resize if too large
+  img.Image resized = decoded;
+  if (decoded.width > 800 || decoded.height > 800) {
+    resized = img.copyResize(
+      decoded,
+      width: decoded.width > decoded.height ? 800 : null,
+      height: decoded.height >= decoded.width ? 800 : null,
+    );
+  }
+
+  return Uint8List.fromList(img.encodeJpg(resized, quality: 75));
+}
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -31,6 +57,42 @@ class _InventoryScreenState extends State<InventoryScreen> {
   bool _showLowStockOnly = false;
   int _currentPage = 1;
   final int _itemsPerPage = 10;
+
+  static const List<String> _bulkUploadHeaders = [
+    'RowType',
+    'ProductId',
+    'ProductName',
+    'CategoryName',
+    'ImageUrl',
+    'UOM',
+    'HSNCode',
+    'GSTRate',
+    'CessRate',
+    'IsTaxInclusive',
+    'IsExempt',
+    'LowStockLimit',
+    'IsInfiniteStock',
+    'IsLooseItem',
+    'BatchTracking',
+    'WarrantyMonths',
+    'IsActive',
+    'MasterMRP',
+    'MasterSellingPrice',
+    'MasterPurchaseRate',
+    'InitialStockQty',
+    'BatchNumber',
+    'BatchExpiryDate',
+    'BatchMRP',
+    'BatchSellingPrice',
+    'BatchPurchaseRate',
+    'BatchStockQty',
+    'UOM2',
+    'UOM2Factor',
+    'UOM2Barcode',
+    'UOM3',
+    'UOM3Factor',
+    'UOM3Barcode',
+  ];
 
   @override
   void initState() {
@@ -542,6 +604,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
+                    // Bulk Upload Button
+                    _buildIconButton(Icons.upload_file, _handleBulkUpload),
+                    const SizedBox(width: 8),
                     // Filter Button
                     _buildIconButton(Icons.filter_list, _showFilterDialog),
                   ],
@@ -600,6 +665,29 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: _handleBulkUpload,
+                icon: const Icon(Icons.upload_file, size: 18),
+                label: Text(
+                  'Bulk Upload',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  side: BorderSide(color: Colors.grey.shade300),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
@@ -814,41 +902,110 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   Future<String?> _showAddCategoryDialog() async {
     final controller = TextEditingController();
+    String? pickedImageB64; // raw base64 (no data: prefix)
+
     return showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New Category'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Category Name',
-            hintText: 'e.g. Dairy, Snacks',
-          ),
-          textCapitalization: TextCapitalization.words,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final name = controller.text.trim();
-              if (name.isNotEmpty) {
-                final id = const Uuid().v4();
-                await _db
-                    .into(_db.categories)
-                    .insert(CategoriesCompanion.insert(id: id, name: name));
-                if (mounted) Navigator.pop(context, id);
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('New Category'),
+            content: SizedBox(
+              width: 340,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      labelText: 'Category Name',
+                      hintText: 'e.g. Dairy, Snacks',
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  // Image picker row
+                  Row(
+                    children: [
+                      // Preview thumbnail
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: pickedImageB64 != null
+                            ? Image.memory(
+                                base64Decode(pickedImageB64!),
+                                fit: BoxFit.cover,
+                              )
+                            : const Icon(Icons.image_outlined, color: Colors.grey, size: 28),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: () async {
+                            final result = await FilePicker.platform.pickFiles(
+                              type: FileType.image,
+                              allowMultiple: false,
+                            );
+                            if (result == null || result.files.isEmpty) return;
+
+                            final file = File(result.files.first.path!);
+                            final rawBytes = await file.readAsBytes();
+
+                            // Process off UI thread to prevent jank/crashes
+                            final processedBytes = await compute(_processImageBytes, rawBytes);
+                            final b64 = base64Encode(processedBytes);
+                            
+                            setDialogState(() => pickedImageB64 = b64);
+                          },
+                          icon: const Icon(Icons.upload_rounded, size: 18),
+                          label: Text(
+                            pickedImageB64 != null ? 'Change Image' : 'Upload Image',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final name = controller.text.trim();
+                  if (name.isNotEmpty) {
+                    final id = const Uuid().v4();
+                    await _db.into(_db.categories).insert(
+                          CategoriesCompanion.insert(
+                            id: id,
+                            name: name,
+                            imageB64: drift.Value(pickedImageB64),
+                          ),
+                        );
+                    if (mounted) Navigator.pop(context, id);
+                  }
+                },
+                child: const Text('Add'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
+
 
   void _showAddItemDialog({Product? product}) {
     final formKey = GlobalKey<FormState>();
@@ -867,6 +1024,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     // Initial stock fields for NEW product only
     final isEditing = product != null;
+    
+    // Support base64 image preview for new/edited products
+    String? pickedImageB64 = product?.imageB64;
+
     final mrpController = TextEditingController(
       text: product?.mrp.toStringAsFixed(0) ?? '',
     );
@@ -998,50 +1159,42 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                       width: 60,
                                       height: 60,
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey),
+                                        border: Border.all(color: Colors.grey.shade300),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: pickedImage != null
-                                          ? Image.file(
-                                              pickedImage!,
+                                      clipBehavior: Clip.antiAlias,
+                                      child: pickedImageB64 != null
+                                          ? Image.memory(
+                                              base64Decode(pickedImageB64!),
                                               fit: BoxFit.cover,
                                             )
-                                          : (imageUrlController.text.isNotEmpty
-                                                ? (imageUrlController.text
-                                                          .startsWith('http')
-                                                      ? Image.network(
-                                                          imageUrlController
-                                                              .text,
-                                                        )
-                                                      : Image.file(
-                                                          File(
-                                                            imageUrlController
-                                                                .text,
-                                                          ),
-                                                        ))
-                                                : const Icon(Icons.image)),
+                                          : ImageHelper.getImageWidget(
+                                              imageUrlController.text,
+                                              fit: BoxFit.cover,
+                                            ),
                                     ),
                                     const SizedBox(width: 8),
-                                    TextButton(
+                                    TextButton.icon(
                                       onPressed: () async {
-                                        final img = await ImagePicker()
-                                            .pickImage(
-                                              source: ImageSource.gallery,
-                                            );
-                                        if (img != null) {
-                                          final appDir =
-                                              await getApplicationDocumentsDirectory();
-                                          final saved = await File(img.path).copy(
-                                            '${appDir.path}/${path.basename(img.path)}',
-                                          );
-                                          setDrawerState(() {
-                                            pickedImage = saved;
-                                            imageUrlController.text =
-                                                saved.path;
-                                          });
-                                        }
+                                        final result = await FilePicker.platform.pickFiles(
+                                          type: FileType.image,
+                                          allowMultiple: false,
+                                        );
+                                        if (result == null || result.files.isEmpty) return;
+
+                                        final file = File(result.files.first.path!);
+                                        final rawBytes = await file.readAsBytes();
+
+                                        // Process off UI thread
+                                        final processedBytes = await compute(_processImageBytes, rawBytes);
+                                        final b64 = base64Encode(processedBytes);
+
+                                        setDrawerState(() {
+                                          pickedImageB64 = b64;
+                                        });
                                       },
-                                      child: const Text('Upload Image'),
+                                      icon: const Icon(Icons.upload, size: 16),
+                                      label: const Text('Upload Image'),
                                     ),
                                   ],
                                 ),
@@ -1069,6 +1222,33 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                         ),
                                         validator: (v) =>
                                             v == null ? 'Required' : null,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      height: 48,
+                                      width: 48,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: IconButton(
+                                        icon: const Icon(Icons.edit),
+                                        tooltip: 'Edit Category',
+                                        onPressed: selectedCategory == null
+                                            ? null
+                                            : () async {
+                                                final updated =
+                                                    await _showEditCategoryDialog(
+                                                      selectedCategory!,
+                                                    );
+                                                if (updated) {
+                                                  await _loadMetadata();
+                                                  setDrawerState(() {});
+                                                }
+                                              },
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1721,6 +1901,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                               : 0,
                                         ),
                                         updatedAt: drift.Value(now),
+                                        imageB64: drift.Value(pickedImageB64),
                                       ),
                                     );
                                   } else {
@@ -1796,6 +1977,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                             ),
                                             createdAt: now,
                                             updatedAt: now,
+                                            imageB64: drift.Value(pickedImageB64),
                                           ),
                                         );
 
@@ -1879,6 +2061,627 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _handleBulkUpload() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['xlsx'],
+      );
+      if (result == null || result.files.single.path == null) return;
+
+      final filePath = result.files.single.path;
+      if (filePath == null) {
+        _showUploadError('Bulk upload failed: file path is empty.');
+        return;
+      }
+      final bytes = await File(filePath).readAsBytes();
+      final decoder = SpreadsheetDecoder.decodeBytes(bytes, update: true);
+
+      const sheetName = 'Inventory Upload';
+      final sheet = decoder.tables[sheetName];
+      if (sheet == null) {
+        _showUploadError(
+          'Invalid file: missing sheet "$sheetName".',
+        );
+        return;
+      }
+    if (sheet.rows.isEmpty) {
+      _showUploadError('Invalid file: header row not found.');
+      return;
+    }
+
+    final headerRow = sheet.rows.first;
+    final headers = List<String>.generate(
+      _bulkUploadHeaders.length,
+      (i) => _cellString(headerRow, i),
+    );
+
+    final headerLengthMatches =
+        headerRow.length == _bulkUploadHeaders.length;
+    final headerOrderMatches = List.generate(_bulkUploadHeaders.length, (i) {
+      return headers[i] == _bulkUploadHeaders[i];
+    }).every((v) => v);
+
+    if (!headerLengthMatches || !headerOrderMatches) {
+      _showUploadError(
+        'Header mismatch. Please use the provided template without changing column order.',
+      );
+      return;
+    }
+
+      final categories = await _db.select(_db.categories).get();
+      final categoryByName = {
+        for (final c in categories) c.name.toLowerCase().trim(): c.id
+      };
+    final existingProducts = await _db.select(_db.products).get();
+    final existingIds = existingProducts.map((p) => p.id).toSet();
+
+    final errors = <String>[];
+    final rowsToImport = <Map<String, dynamic>>[];
+    final seenIds = <String>{};
+    int emptyRows = 0;
+    int sampleRows = 0;
+    int dataRows = 0;
+
+    for (int r = 1; r < sheet.rows.length; r++) {
+      final row = sheet.rows[r];
+      if (_isRowEmpty(row)) {
+        emptyRows++;
+        continue;
+      }
+
+      final rowType = _cellString(row, 0).trim();
+      if (rowType.toLowerCase() == 'sample') {
+        sampleRows++;
+        continue;
+      }
+
+      final rowIndex = r + 1;
+      dataRows++;
+
+      final productId = _cellString(row, 1).trim();
+      final productName = _cellString(row, 2).trim();
+      final categoryName = _cellString(row, 3).trim();
+      final imageUrl = _cellString(row, 4).trim();
+      final uom = _cellString(row, 5).trim();
+      final hsnCode = _cellString(row, 6).trim();
+
+      final gstRate = _parseDouble(_cellString(row, 7));
+      final cessRate = _parseDouble(_cellString(row, 8)) ?? 0.0;
+      final isTaxInclusive =
+          _parseBool(_cellString(row, 9), defaultValue: true);
+      final isExempt = _parseBool(_cellString(row, 10), defaultValue: false);
+      final lowStockLimit = _parseDouble(_cellString(row, 11));
+      final isInfiniteStock =
+          _parseBool(_cellString(row, 12), defaultValue: false);
+      final isLooseItem =
+          _parseBool(_cellString(row, 13), defaultValue: false);
+      final batchTracking =
+          _parseBool(_cellString(row, 14), defaultValue: false);
+      final warrantyMonths =
+          _parseInt(_cellString(row, 15), defaultValue: 0);
+      final isActive = _parseBool(_cellString(row, 16), defaultValue: true);
+
+      final masterMrp = _parseDouble(_cellString(row, 17));
+      final masterSp = _parseDouble(_cellString(row, 18));
+      final masterPurchase = _parseDouble(_cellString(row, 19));
+      final initialStock = _parseDouble(_cellString(row, 20)) ?? 0.0;
+
+      final batchNumber = _cellString(row, 21).trim();
+      final batchExpiry = _parseDate(row, 22);
+      final batchMrp = _parseDouble(_cellString(row, 23));
+      final batchSp = _parseDouble(_cellString(row, 24));
+      final batchPurchase = _parseDouble(_cellString(row, 25));
+      final batchQty = _parseDouble(_cellString(row, 26));
+
+      final uom2 = _cellString(row, 27).trim();
+      final uom2Factor = _parseDouble(_cellString(row, 28));
+      final uom2Barcode = _cellString(row, 29).trim();
+      final uom3 = _cellString(row, 30).trim();
+      final uom3Factor = _parseDouble(_cellString(row, 31));
+      final uom3Barcode = _cellString(row, 32).trim();
+
+      if (productName.isEmpty) {
+        errors.add('Row $rowIndex: ProductName is required.');
+      }
+      if (categoryName.isEmpty) {
+        errors.add('Row $rowIndex: CategoryName is required.');
+      }
+      if (uom.isEmpty) {
+        errors.add('Row $rowIndex: UOM is required.');
+      }
+      if (hsnCode.isEmpty) {
+        errors.add('Row $rowIndex: HSNCode is required.');
+      }
+      if (gstRate == null) {
+        errors.add('Row $rowIndex: GSTRate is required.');
+      }
+      if (lowStockLimit == null) {
+        errors.add('Row $rowIndex: LowStockLimit is required.');
+      }
+      if (masterMrp == null || masterSp == null || masterPurchase == null) {
+        errors.add(
+          'Row $rowIndex: MasterMRP, MasterSellingPrice, and MasterPurchaseRate are required.',
+        );
+      }
+
+      if (productId.isNotEmpty) {
+        if (existingIds.contains(productId)) {
+          errors.add('Row $rowIndex: ProductId "$productId" already exists.');
+        }
+        if (seenIds.contains(productId)) {
+          errors.add('Row $rowIndex: Duplicate ProductId "$productId" in file.');
+        }
+        seenIds.add(productId);
+      }
+
+      if (uom2.isNotEmpty && (uom2Factor == null || uom2Factor <= 0)) {
+        errors.add('Row $rowIndex: UOM2Factor must be > 0.');
+      }
+      if (uom3.isNotEmpty && (uom3Factor == null || uom3Factor <= 0)) {
+        errors.add('Row $rowIndex: UOM3Factor must be > 0.');
+      }
+
+      rowsToImport.add({
+        'rowIndex': rowIndex,
+        'productId': productId,
+        'productName': productName,
+        'categoryName': categoryName,
+        'imageUrl': imageUrl,
+        'uom': uom,
+        'hsnCode': hsnCode,
+        'gstRate': gstRate ?? 0.0,
+        'cessRate': cessRate,
+        'isTaxInclusive': isTaxInclusive,
+        'isExempt': isExempt,
+        'lowStockLimit': lowStockLimit ?? 0.0,
+        'isInfiniteStock': isInfiniteStock,
+        'isLooseItem': isLooseItem,
+        'batchTracking': batchTracking,
+        'warrantyMonths': warrantyMonths,
+        'isActive': isActive,
+        'masterMrp': masterMrp ?? 0.0,
+        'masterSp': masterSp ?? 0.0,
+        'masterPurchase': masterPurchase ?? 0.0,
+        'initialStock': initialStock,
+        'batchNumber': batchNumber,
+        'batchExpiry': batchExpiry,
+        'batchMrp': batchMrp,
+        'batchSp': batchSp,
+        'batchPurchase': batchPurchase,
+        'batchQty': batchQty,
+        'uom2': uom2,
+        'uom2Factor': uom2Factor,
+        'uom2Barcode': uom2Barcode,
+        'uom3': uom3,
+        'uom3Factor': uom3Factor,
+        'uom3Barcode': uom3Barcode,
+      });
+    }
+
+    if (errors.isNotEmpty) {
+      _showUploadValidationErrors(errors);
+      return;
+    }
+
+    if (rowsToImport.isEmpty) {
+      _showUploadError(
+        'No data rows found to import. '
+        'Total rows: ${sheet.rows.length - 1}, '
+        'Empty: $emptyRows, Sample: $sampleRows, Data: $dataRows.',
+      );
+      return;
+    }
+
+    await _db.transaction(() async {
+      for (final row in rowsToImport) {
+        try {
+          final now = DateTime.now();
+          final productId = (row['productId'] as String).isNotEmpty
+              ? row['productId'] as String
+              : const Uuid().v4();
+
+          final categoryName = (row['categoryName'] as String).trim();
+          String categoryId;
+          final key = categoryName.toLowerCase();
+          if (categoryByName.containsKey(key)) {
+            categoryId = categoryByName[key]!;
+          } else {
+            categoryId = const Uuid().v4();
+            await _db.into(_db.categories).insert(
+                  CategoriesCompanion.insert(
+                    id: categoryId,
+                    name: categoryName,
+                  ),
+                );
+            categoryByName[key] = categoryId;
+          }
+
+          final imageUrl = row['imageUrl'] as String;
+          final storedImagePath =
+              await _ingestImageForProduct(imageUrl, productId);
+
+          await _db.into(_db.products).insert(
+                ProductsCompanion.insert(
+                  id: productId,
+                  name: row['productName'] as String,
+                  categoryId: categoryId,
+                  hsnCode: row['hsnCode'] as String,
+                  gstRate: row['gstRate'] as double,
+                  cessRate: drift.Value(row['cessRate'] as double),
+                  isTaxInclusive: drift.Value(row['isTaxInclusive'] as bool),
+                  isExempt: drift.Value(row['isExempt'] as bool),
+                  lowStockLimit: row['lowStockLimit'] as double,
+                  isInfiniteStock: drift.Value(row['isInfiniteStock'] as bool),
+                  isLooseItem: drift.Value(row['isLooseItem'] as bool),
+                  batchTracking: drift.Value(row['batchTracking'] as bool),
+                  mrp: drift.Value(row['masterMrp'] as double),
+                  sellingPrice: drift.Value(row['masterSp'] as double),
+                  purchaseRate: drift.Value(row['masterPurchase'] as double),
+                  uom: row['uom'] as String,
+                  imageUrl: drift.Value(
+                  (storedImagePath ?? '').isNotEmpty ? storedImagePath : null,
+                  ),
+                  warrantyMonths: drift.Value(row['warrantyMonths'] as int),
+                  isActive: drift.Value(row['isActive'] as bool),
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+
+          await _db.into(_db.productUoms).insert(
+                ProductUomsCompanion(
+                  productId: drift.Value(productId),
+                  uomName: drift.Value(row['uom'] as String),
+                  conversionFactor: drift.Value(1.0),
+                  isBase: drift.Value(true),
+                  barcode: const drift.Value(null),
+                ),
+              );
+
+          final uom2Name = row['uom2'] as String;
+          final uom2Factor = row['uom2Factor'] as double?;
+          final uom2Barcode = row['uom2Barcode'] as String;
+          if (uom2Name.isNotEmpty && (uom2Factor ?? 0) > 0) {
+            await _db.into(_db.productUoms).insert(
+                  ProductUomsCompanion(
+                    productId: drift.Value(productId),
+                    uomName: drift.Value(uom2Name),
+                    conversionFactor: drift.Value(uom2Factor ?? 1.0),
+                    isBase: drift.Value(false),
+                    barcode: drift.Value(uom2Barcode.isNotEmpty ? uom2Barcode : null),
+                  ),
+                );
+          }
+
+          final uom3Name = row['uom3'] as String;
+          final uom3Factor = row['uom3Factor'] as double?;
+          final uom3Barcode = row['uom3Barcode'] as String;
+          if (uom3Name.isNotEmpty && (uom3Factor ?? 0) > 0) {
+            await _db.into(_db.productUoms).insert(
+                  ProductUomsCompanion(
+                    productId: drift.Value(productId),
+                    uomName: drift.Value(uom3Name),
+                    conversionFactor: drift.Value(uom3Factor ?? 1.0),
+                    isBase: drift.Value(false),
+                    barcode: drift.Value(uom3Barcode.isNotEmpty ? uom3Barcode : null),
+                  ),
+                );
+          }
+
+          final batchQty = (row['batchQty'] as double?) ?? 0.0;
+          final initialStock = row['initialStock'] as double;
+          final effectiveQty = batchQty > 0 ? batchQty : initialStock;
+
+          if (effectiveQty > 0) {
+            final batchMrp =
+                (row['batchMrp'] as double?) ?? row['masterMrp'] as double;
+            final batchPurchase =
+                (row['batchPurchase'] as double?) ?? row['masterPurchase'] as double;
+            final batchSp =
+                (row['batchSp'] as double?) ?? row['masterSp'] as double;
+            final batchNumber = (row['batchNumber'] as String).isNotEmpty
+                ? row['batchNumber'] as String
+                : null;
+            final batchExpiry = row['batchExpiry'] as DateTime?;
+
+            await _db.findOrCreateBatch(
+              productId: productId,
+              mrp: batchMrp,
+              buyPrice: batchPurchase,
+              quantity: effectiveQty,
+              expiry: batchExpiry,
+              batchNumber: batchNumber,
+            );
+
+            if (batchSp != batchMrp) {
+              final existing = await (_db.select(_db.productBatches)
+                    ..where((t) =>
+                        t.productId.equals(productId) & t.mrp.equals(batchMrp))
+                    ..orderBy([(t) => drift.OrderingTerm.desc(t.createdAt)])
+                    ..limit(1))
+                  .getSingleOrNull();
+
+              if (existing != null && existing.sellingPrice != batchSp) {
+                await (_db.update(_db.productBatches)
+                      ..where((t) => t.id.equals(existing.id)))
+                    .write(ProductBatchesCompanion(
+                      sellingPrice: drift.Value(batchSp),
+                      updatedAt: drift.Value(DateTime.now()),
+                    ));
+              }
+            }
+          }
+        } catch (e) {
+          final rowIndex = row['rowIndex'] as int? ?? -1;
+          throw Exception('Row $rowIndex failed: $e');
+        }
+      }
+    });
+
+    _showUploadSuccess('Imported ${rowsToImport.length} items successfully.');
+    } catch (e, st) {
+      _showUploadError('Bulk upload failed: $e');
+      debugPrint('Bulk upload error: $e');
+      debugPrint(st.toString());
+    }
+  }
+
+  String _cellString(List<dynamic> row, int index) {
+    if (index >= row.length) return '';
+    final value = row[index];
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  bool _isRowEmpty(List<dynamic> row) {
+    for (final value in row) {
+      if (value == null) continue;
+      if (value.toString().trim().isNotEmpty) return false;
+    }
+    return true;
+  }
+
+  bool _parseBool(String value, {required bool defaultValue}) {
+    final v = value.trim().toLowerCase();
+    if (v.isEmpty) return defaultValue;
+    if (v == 'true' || v == '1' || v == 'yes') return true;
+    if (v == 'false' || v == '0' || v == 'no') return false;
+    return defaultValue;
+  }
+
+  double? _parseDouble(String value) {
+    final v = value.trim();
+    if (v.isEmpty) return null;
+    return double.tryParse(v);
+  }
+
+  int _parseInt(String value, {required int defaultValue}) {
+    final v = value.trim();
+    if (v.isEmpty) return defaultValue;
+    return int.tryParse(v) ?? defaultValue;
+  }
+
+  DateTime? _parseDate(List<dynamic> row, int index) {
+    if (index >= row.length) return null;
+    final value = row[index];
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    final str = value.toString().trim();
+    if (str.isEmpty) return null;
+    return DateTime.tryParse(str);
+  }
+
+  Future<String?> _ingestImageForProduct(
+    String source,
+    String productId,
+  ) async {
+    final src = source.trim();
+    if (src.isEmpty) return null;
+
+    List<int> bytes;
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      final resp = await http.get(Uri.parse(src));
+      if (resp.statusCode != 200) {
+        throw Exception('Image download failed (${resp.statusCode})');
+      }
+      bytes = resp.bodyBytes;
+    } else {
+      final file = File(src);
+      if (!file.existsSync()) {
+        throw Exception('Image file not found: $src');
+      }
+      bytes = await file.readAsBytes();
+    }
+
+    final decoded = img.decodeImage(Uint8List.fromList(bytes));
+    if (decoded == null) {
+      throw Exception('Unsupported image format');
+    }
+
+    // Resize large images to keep storage reasonable
+    final resized = (decoded.width > 1200 || decoded.height > 1200)
+        ? img.copyResize(decoded, width: 1200)
+        : decoded;
+
+    final outBytes = img.encodeJpg(resized, quality: 80);
+
+    final dir = await getApplicationDocumentsDirectory();
+    final imgDir = Directory(path.join(dir.path, 'product_images'));
+    if (!imgDir.existsSync()) {
+      imgDir.createSync(recursive: true);
+    }
+    final outPath = path.join(imgDir.path, '$productId.jpg');
+    await File(outPath).writeAsBytes(outBytes, flush: true);
+    return outPath;
+  }
+
+  void _showUploadError(String message) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Bulk Upload Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _showEditCategoryDialog(String categoryId) async {
+    final cat = await (_db.select(_db.categories)..where((t) => t.id.equals(categoryId))).getSingleOrNull();
+    if (cat == null) return false;
+
+    final controller = TextEditingController(text: cat.name);
+    String? pickedImageB64 = cat.imageB64;
+
+    return (await showDialog<bool>(
+          context: context,
+          builder: (context) => StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: const Text('Edit Category'),
+                content: SizedBox(
+                  width: 340,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: controller,
+                        decoration: const InputDecoration(
+                          labelText: 'Category Name',
+                        ),
+                        textCapitalization: TextCapitalization.words,
+                        autofocus: true,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: pickedImageB64 != null
+                                ? Image.memory(
+                                    base64Decode(pickedImageB64!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : const Icon(Icons.image_outlined, color: Colors.grey, size: 28),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: () async {
+                                final result = await FilePicker.platform.pickFiles(
+                                  type: FileType.image,
+                                  allowMultiple: false,
+                                );
+                                if (result == null || result.files.isEmpty) return;
+
+                                final file = File(result.files.first.path!);
+                                final rawBytes = await file.readAsBytes();
+
+                                // Background processing
+                                final processedBytes = await compute(_processImageBytes, rawBytes);
+                                final b64 = base64Encode(processedBytes);
+                                setDialogState(() => pickedImageB64 = b64);
+                              },
+                              icon: const Icon(Icons.upload_rounded, size: 18),
+                              label: Text(
+                                pickedImageB64 != null ? 'Change Image' : 'Upload Image',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final newName = controller.text.trim();
+                      if (newName.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Name cannot be empty')),
+                        );
+                        return;
+                      }
+
+                      final lower = newName.toLowerCase();
+                      final duplicate = _categoryNames.entries.any(
+                        (e) => e.key != categoryId && e.value.toLowerCase() == lower,
+                      );
+                      if (duplicate) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Category already exists')),
+                        );
+                        return;
+                      }
+
+                      await (_db.update(_db.categories)
+                            ..where((t) => t.id.equals(categoryId)))
+                          .write(CategoriesCompanion(
+                        name: drift.Value(newName),
+                        imageB64: drift.Value(pickedImageB64),
+                      ));
+                      Navigator.pop(context, true);
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              );
+            },
+          ),
+        )) ??
+        false;
+  }
+
+  void _showUploadValidationErrors(List<String> errors) {
+    if (!mounted) return;
+    final preview = errors.length > 8 ? errors.sublist(0, 8) : errors;
+    final moreCount = errors.length - preview.length;
+    final message = StringBuffer()
+      ..writeln(preview.join('\n'))
+      ..writeln(moreCount > 0 ? '\n...and $moreCount more.' : '');
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Fix These Rows'),
+        content: Text(message.toString().trim()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUploadSuccess(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 

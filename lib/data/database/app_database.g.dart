@@ -48,6 +48,17 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _imageB64Meta = const VerificationMeta(
+    'imageB64',
+  );
+  @override
+  late final GeneratedColumn<String> imageB64 = GeneratedColumn<String>(
+    'image_b64',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _mrpMeta = const VerificationMeta('mrp');
   @override
   late final GeneratedColumn<double> mrp = GeneratedColumn<double>(
@@ -266,6 +277,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     name,
     categoryId,
     imageUrl,
+    imageB64,
     mrp,
     sellingPrice,
     purchaseRate,
@@ -321,6 +333,12 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       context.handle(
         _imageUrlMeta,
         imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta),
+      );
+    }
+    if (data.containsKey('image_b64')) {
+      context.handle(
+        _imageB64Meta,
+        imageB64.isAcceptableOrUnknown(data['image_b64']!, _imageB64Meta),
       );
     }
     if (data.containsKey('mrp')) {
@@ -486,6 +504,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.string,
         data['${effectivePrefix}image_url'],
       ),
+      imageB64: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_b64'],
+      ),
       mrp: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}mrp'],
@@ -568,6 +590,10 @@ class Product extends DataClass implements Insertable<Product> {
   final String name;
   final String categoryId;
   final String? imageUrl;
+
+  /// Base64-encoded WebP image stored in SQLite for self-contained backups.
+  /// Preferred over imageUrl for new images. No data: prefix.
+  final String? imageB64;
   final double mrp;
   final double sellingPrice;
   final double purchaseRate;
@@ -590,6 +616,7 @@ class Product extends DataClass implements Insertable<Product> {
     required this.name,
     required this.categoryId,
     this.imageUrl,
+    this.imageB64,
     required this.mrp,
     required this.sellingPrice,
     required this.purchaseRate,
@@ -616,6 +643,9 @@ class Product extends DataClass implements Insertable<Product> {
     map['category_id'] = Variable<String>(categoryId);
     if (!nullToAbsent || imageUrl != null) {
       map['image_url'] = Variable<String>(imageUrl);
+    }
+    if (!nullToAbsent || imageB64 != null) {
+      map['image_b64'] = Variable<String>(imageB64);
     }
     map['mrp'] = Variable<double>(mrp);
     map['selling_price'] = Variable<double>(sellingPrice);
@@ -647,6 +677,9 @@ class Product extends DataClass implements Insertable<Product> {
       imageUrl: imageUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(imageUrl),
+      imageB64: imageB64 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageB64),
       mrp: Value(mrp),
       sellingPrice: Value(sellingPrice),
       purchaseRate: Value(purchaseRate),
@@ -679,6 +712,7 @@ class Product extends DataClass implements Insertable<Product> {
       name: serializer.fromJson<String>(json['name']),
       categoryId: serializer.fromJson<String>(json['categoryId']),
       imageUrl: serializer.fromJson<String?>(json['imageUrl']),
+      imageB64: serializer.fromJson<String?>(json['imageB64']),
       mrp: serializer.fromJson<double>(json['mrp']),
       sellingPrice: serializer.fromJson<double>(json['sellingPrice']),
       purchaseRate: serializer.fromJson<double>(json['purchaseRate']),
@@ -706,6 +740,7 @@ class Product extends DataClass implements Insertable<Product> {
       'name': serializer.toJson<String>(name),
       'categoryId': serializer.toJson<String>(categoryId),
       'imageUrl': serializer.toJson<String?>(imageUrl),
+      'imageB64': serializer.toJson<String?>(imageB64),
       'mrp': serializer.toJson<double>(mrp),
       'sellingPrice': serializer.toJson<double>(sellingPrice),
       'purchaseRate': serializer.toJson<double>(purchaseRate),
@@ -731,6 +766,7 @@ class Product extends DataClass implements Insertable<Product> {
     String? name,
     String? categoryId,
     Value<String?> imageUrl = const Value.absent(),
+    Value<String?> imageB64 = const Value.absent(),
     double? mrp,
     double? sellingPrice,
     double? purchaseRate,
@@ -753,6 +789,7 @@ class Product extends DataClass implements Insertable<Product> {
     name: name ?? this.name,
     categoryId: categoryId ?? this.categoryId,
     imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
+    imageB64: imageB64.present ? imageB64.value : this.imageB64,
     mrp: mrp ?? this.mrp,
     sellingPrice: sellingPrice ?? this.sellingPrice,
     purchaseRate: purchaseRate ?? this.purchaseRate,
@@ -781,6 +818,7 @@ class Product extends DataClass implements Insertable<Product> {
           ? data.categoryId.value
           : this.categoryId,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
+      imageB64: data.imageB64.present ? data.imageB64.value : this.imageB64,
       mrp: data.mrp.present ? data.mrp.value : this.mrp,
       sellingPrice: data.sellingPrice.present
           ? data.sellingPrice.value
@@ -824,6 +862,7 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('name: $name, ')
           ..write('categoryId: $categoryId, ')
           ..write('imageUrl: $imageUrl, ')
+          ..write('imageB64: $imageB64, ')
           ..write('mrp: $mrp, ')
           ..write('sellingPrice: $sellingPrice, ')
           ..write('purchaseRate: $purchaseRate, ')
@@ -851,6 +890,7 @@ class Product extends DataClass implements Insertable<Product> {
     name,
     categoryId,
     imageUrl,
+    imageB64,
     mrp,
     sellingPrice,
     purchaseRate,
@@ -877,6 +917,7 @@ class Product extends DataClass implements Insertable<Product> {
           other.name == this.name &&
           other.categoryId == this.categoryId &&
           other.imageUrl == this.imageUrl &&
+          other.imageB64 == this.imageB64 &&
           other.mrp == this.mrp &&
           other.sellingPrice == this.sellingPrice &&
           other.purchaseRate == this.purchaseRate &&
@@ -901,6 +942,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<String> name;
   final Value<String> categoryId;
   final Value<String?> imageUrl;
+  final Value<String?> imageB64;
   final Value<double> mrp;
   final Value<double> sellingPrice;
   final Value<double> purchaseRate;
@@ -924,6 +966,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.name = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.imageUrl = const Value.absent(),
+    this.imageB64 = const Value.absent(),
     this.mrp = const Value.absent(),
     this.sellingPrice = const Value.absent(),
     this.purchaseRate = const Value.absent(),
@@ -948,6 +991,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     required String name,
     required String categoryId,
     this.imageUrl = const Value.absent(),
+    this.imageB64 = const Value.absent(),
     this.mrp = const Value.absent(),
     this.sellingPrice = const Value.absent(),
     this.purchaseRate = const Value.absent(),
@@ -980,6 +1024,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<String>? name,
     Expression<String>? categoryId,
     Expression<String>? imageUrl,
+    Expression<String>? imageB64,
     Expression<double>? mrp,
     Expression<double>? sellingPrice,
     Expression<double>? purchaseRate,
@@ -1004,6 +1049,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (name != null) 'name': name,
       if (categoryId != null) 'category_id': categoryId,
       if (imageUrl != null) 'image_url': imageUrl,
+      if (imageB64 != null) 'image_b64': imageB64,
       if (mrp != null) 'mrp': mrp,
       if (sellingPrice != null) 'selling_price': sellingPrice,
       if (purchaseRate != null) 'purchase_rate': purchaseRate,
@@ -1030,6 +1076,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<String>? name,
     Value<String>? categoryId,
     Value<String?>? imageUrl,
+    Value<String?>? imageB64,
     Value<double>? mrp,
     Value<double>? sellingPrice,
     Value<double>? purchaseRate,
@@ -1054,6 +1101,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       name: name ?? this.name,
       categoryId: categoryId ?? this.categoryId,
       imageUrl: imageUrl ?? this.imageUrl,
+      imageB64: imageB64 ?? this.imageB64,
       mrp: mrp ?? this.mrp,
       sellingPrice: sellingPrice ?? this.sellingPrice,
       purchaseRate: purchaseRate ?? this.purchaseRate,
@@ -1089,6 +1137,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     }
     if (imageUrl.present) {
       map['image_url'] = Variable<String>(imageUrl.value);
+    }
+    if (imageB64.present) {
+      map['image_b64'] = Variable<String>(imageB64.value);
     }
     if (mrp.present) {
       map['mrp'] = Variable<double>(mrp.value);
@@ -1154,6 +1205,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('name: $name, ')
           ..write('categoryId: $categoryId, ')
           ..write('imageUrl: $imageUrl, ')
+          ..write('imageB64: $imageB64, ')
           ..write('mrp: $mrp, ')
           ..write('sellingPrice: $sellingPrice, ')
           ..write('purchaseRate: $purchaseRate, ')
@@ -1710,8 +1762,19 @@ class $CategoriesTable extends Categories
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _imageB64Meta = const VerificationMeta(
+    'imageB64',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name];
+  late final GeneratedColumn<String> imageB64 = GeneratedColumn<String>(
+    'image_b64',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, imageB64];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1737,6 +1800,12 @@ class $CategoriesTable extends Categories
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('image_b64')) {
+      context.handle(
+        _imageB64Meta,
+        imageB64.isAcceptableOrUnknown(data['image_b64']!, _imageB64Meta),
+      );
+    }
     return context;
   }
 
@@ -1754,6 +1823,10 @@ class $CategoriesTable extends Categories
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      imageB64: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_b64'],
+      ),
     );
   }
 
@@ -1766,17 +1839,30 @@ class $CategoriesTable extends Categories
 class Category extends DataClass implements Insertable<Category> {
   final String id;
   final String name;
-  const Category({required this.id, required this.name});
+
+  /// Base64-encoded WebP image stored directly in SQLite for self-contained backups.
+  /// No data: prefix — just the raw base64 string.
+  final String? imageB64;
+  const Category({required this.id, required this.name, this.imageB64});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || imageB64 != null) {
+      map['image_b64'] = Variable<String>(imageB64);
+    }
     return map;
   }
 
   CategoriesCompanion toCompanion(bool nullToAbsent) {
-    return CategoriesCompanion(id: Value(id), name: Value(name));
+    return CategoriesCompanion(
+      id: Value(id),
+      name: Value(name),
+      imageB64: imageB64 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageB64),
+    );
   }
 
   factory Category.fromJson(
@@ -1787,6 +1873,7 @@ class Category extends DataClass implements Insertable<Category> {
     return Category(
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      imageB64: serializer.fromJson<String?>(json['imageB64']),
     );
   }
   @override
@@ -1795,15 +1882,24 @@ class Category extends DataClass implements Insertable<Category> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
+      'imageB64': serializer.toJson<String?>(imageB64),
     };
   }
 
-  Category copyWith({String? id, String? name}) =>
-      Category(id: id ?? this.id, name: name ?? this.name);
+  Category copyWith({
+    String? id,
+    String? name,
+    Value<String?> imageB64 = const Value.absent(),
+  }) => Category(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    imageB64: imageB64.present ? imageB64.value : this.imageB64,
+  );
   Category copyWithCompanion(CategoriesCompanion data) {
     return Category(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      imageB64: data.imageB64.present ? data.imageB64.value : this.imageB64,
     );
   }
 
@@ -1811,42 +1907,51 @@ class Category extends DataClass implements Insertable<Category> {
   String toString() {
     return (StringBuffer('Category(')
           ..write('id: $id, ')
-          ..write('name: $name')
+          ..write('name: $name, ')
+          ..write('imageB64: $imageB64')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name);
+  int get hashCode => Object.hash(id, name, imageB64);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Category && other.id == this.id && other.name == this.name);
+      (other is Category &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.imageB64 == this.imageB64);
 }
 
 class CategoriesCompanion extends UpdateCompanion<Category> {
   final Value<String> id;
   final Value<String> name;
+  final Value<String?> imageB64;
   final Value<int> rowid;
   const CategoriesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.imageB64 = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CategoriesCompanion.insert({
     required String id,
     required String name,
+    this.imageB64 = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name);
   static Insertable<Category> custom({
     Expression<String>? id,
     Expression<String>? name,
+    Expression<String>? imageB64,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (imageB64 != null) 'image_b64': imageB64,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1854,11 +1959,13 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   CategoriesCompanion copyWith({
     Value<String>? id,
     Value<String>? name,
+    Value<String?>? imageB64,
     Value<int>? rowid,
   }) {
     return CategoriesCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      imageB64: imageB64 ?? this.imageB64,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1872,6 +1979,9 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (imageB64.present) {
+      map['image_b64'] = Variable<String>(imageB64.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1883,6 +1993,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     return (StringBuffer('CategoriesCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('imageB64: $imageB64, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -12995,6 +13106,7 @@ typedef $$ProductsTableCreateCompanionBuilder =
       required String name,
       required String categoryId,
       Value<String?> imageUrl,
+      Value<String?> imageB64,
       Value<double> mrp,
       Value<double> sellingPrice,
       Value<double> purchaseRate,
@@ -13020,6 +13132,7 @@ typedef $$ProductsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> categoryId,
       Value<String?> imageUrl,
+      Value<String?> imageB64,
       Value<double> mrp,
       Value<double> sellingPrice,
       Value<double> purchaseRate,
@@ -13098,6 +13211,11 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<String> get imageUrl => $composableBuilder(
     column: $table.imageUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageB64 => $composableBuilder(
+    column: $table.imageB64,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13241,6 +13359,11 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imageB64 => $composableBuilder(
+    column: $table.imageB64,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get mrp => $composableBuilder(
     column: $table.mrp,
     builder: (column) => ColumnOrderings(column),
@@ -13349,6 +13472,9 @@ class $$ProductsTableAnnotationComposer
 
   GeneratedColumn<String> get imageUrl =>
       $composableBuilder(column: $table.imageUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get imageB64 =>
+      $composableBuilder(column: $table.imageB64, builder: (column) => column);
 
   GeneratedColumn<double> get mrp =>
       $composableBuilder(column: $table.mrp, builder: (column) => column);
@@ -13476,6 +13602,7 @@ class $$ProductsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> categoryId = const Value.absent(),
                 Value<String?> imageUrl = const Value.absent(),
+                Value<String?> imageB64 = const Value.absent(),
                 Value<double> mrp = const Value.absent(),
                 Value<double> sellingPrice = const Value.absent(),
                 Value<double> purchaseRate = const Value.absent(),
@@ -13499,6 +13626,7 @@ class $$ProductsTableTableManager
                 name: name,
                 categoryId: categoryId,
                 imageUrl: imageUrl,
+                imageB64: imageB64,
                 mrp: mrp,
                 sellingPrice: sellingPrice,
                 purchaseRate: purchaseRate,
@@ -13524,6 +13652,7 @@ class $$ProductsTableTableManager
                 required String name,
                 required String categoryId,
                 Value<String?> imageUrl = const Value.absent(),
+                Value<String?> imageB64 = const Value.absent(),
                 Value<double> mrp = const Value.absent(),
                 Value<double> sellingPrice = const Value.absent(),
                 Value<double> purchaseRate = const Value.absent(),
@@ -13547,6 +13676,7 @@ class $$ProductsTableTableManager
                 name: name,
                 categoryId: categoryId,
                 imageUrl: imageUrl,
+                imageB64: imageB64,
                 mrp: mrp,
                 sellingPrice: sellingPrice,
                 purchaseRate: purchaseRate,
@@ -13878,12 +14008,14 @@ typedef $$CategoriesTableCreateCompanionBuilder =
     CategoriesCompanion Function({
       required String id,
       required String name,
+      Value<String?> imageB64,
       Value<int> rowid,
     });
 typedef $$CategoriesTableUpdateCompanionBuilder =
     CategoriesCompanion Function({
       Value<String> id,
       Value<String> name,
+      Value<String?> imageB64,
       Value<int> rowid,
     });
 
@@ -13903,6 +14035,11 @@ class $$CategoriesTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageB64 => $composableBuilder(
+    column: $table.imageB64,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -13925,6 +14062,11 @@ class $$CategoriesTableOrderingComposer
     column: $table.name,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get imageB64 => $composableBuilder(
+    column: $table.imageB64,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CategoriesTableAnnotationComposer
@@ -13941,6 +14083,9 @@ class $$CategoriesTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get imageB64 =>
+      $composableBuilder(column: $table.imageB64, builder: (column) => column);
 }
 
 class $$CategoriesTableTableManager
@@ -13973,15 +14118,26 @@ class $$CategoriesTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> imageB64 = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => CategoriesCompanion(id: id, name: name, rowid: rowid),
+              }) => CategoriesCompanion(
+                id: id,
+                name: name,
+                imageB64: imageB64,
+                rowid: rowid,
+              ),
           createCompanionCallback:
               ({
                 required String id,
                 required String name,
+                Value<String?> imageB64 = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) =>
-                  CategoriesCompanion.insert(id: id, name: name, rowid: rowid),
+              }) => CategoriesCompanion.insert(
+                id: id,
+                name: name,
+                imageB64: imageB64,
+                rowid: rowid,
+              ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),

@@ -69,7 +69,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 29;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration {
@@ -83,6 +83,25 @@ class AppDatabase extends _$AppDatabase {
         }
       },
       onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 31) {
+          // Add base64 WebP image columns to categories and products
+          try {
+            await m.addColumn(categories, categories.imageB64);
+          } catch (e) {
+            print('Migration v31: imageB64 on categories may already exist: $e');
+          }
+          try {
+            await m.addColumn(products, products.imageB64);
+          } catch (e) {
+            print('Migration v31: imageB64 on products may already exist: $e');
+          }
+        }
+        if (from < 30) {
+          // Add new tax snapshot columns to bill_items
+          await m.addColumn(billItems, billItems.hsnCode);
+          await m.addColumn(billItems, billItems.taxRate);
+          await m.addColumn(billItems, billItems.cessRate);
+        }
         if (from < 29) {
           await m.addColumn(salesBills, salesBills.customerId);
         }
@@ -810,10 +829,48 @@ class LedgerMetrics {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    // DEV MODE: Use local 'backend' folder in project root
-    // Note: Directory.current works in debug mode on desktop.
-    final dbFolder = Directory.current.path;
-    final file = File(p.join(dbFolder, 'backend', 'db.sqlite'));
-    return NativeDatabase(file);
+    // 1. Find the user's writable AppData directory
+    final appSupportDir = await getApplicationSupportDirectory();
+    final dbFolder = Directory(p.join(appSupportDir.path, 'backend'));
+    
+    if (!await dbFolder.exists()) {
+      await dbFolder.create(recursive: true);
+    }
+
+    final dbFile = File(p.join(dbFolder.path, 'db.sqlite'));
+
+    // 2. If the database doesn't exist in AppData, copy it from the bundled location
+    if (!await dbFile.exists()) {
+      try {
+        // Find bundled database relative to the executable (Production)
+        // or relative to current directory (Debug)
+        final exePath = Platform.resolvedExecutable;
+        final exeDir = p.dirname(exePath);
+        
+        // Potential bundled paths
+        final bundledPaths = [
+          p.join(exeDir, 'backend', 'db.sqlite'), // Production
+          p.join(Directory.current.path, 'backend', 'db.sqlite'), // Debug
+        ];
+
+        File? sourceFile;
+        for (final path in bundledPaths) {
+          final f = File(path);
+          if (await f.exists()) {
+            sourceFile = f;
+            break;
+          }
+        }
+
+        if (sourceFile != null) {
+          await sourceFile.copy(dbFile.path);
+          print('Database seeded from bundled file: ${sourceFile.path}');
+        }
+      } catch (e) {
+        print('Error seeding database: $e');
+      }
+    }
+
+    return NativeDatabase(dbFile);
   });
 }

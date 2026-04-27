@@ -717,7 +717,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   context,
                                   title: 'Reports & Finance',
                                   items: [
-                                    'Day End Report',
                                     'Expense Tracker',
                                     'Tax Summary',
                                     'Profit & Loss',
@@ -730,7 +729,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   title: 'Reports & Finance',
                                   items: [
                                     'General Ledger',
-                                    'Day End Report',
                                     'Expense Tracker',
                                     'Tax Summary',
                                     'Profit & Loss',

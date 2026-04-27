@@ -54,7 +54,6 @@ class _AdminSideMenuState extends State<AdminSideMenu> {
       items: [
         'General Ledger',
         'Chart of Accounts', // Liquid Assets
-        'Day End Report',
         'Expense Tracker',
         'Tax Summary',
         'Profit & Loss',

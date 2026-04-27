@@ -8,6 +8,9 @@ class Products extends Table {
   TextColumn get categoryId => text()();
 
   TextColumn get imageUrl => text().nullable()();
+  /// Base64-encoded WebP image stored in SQLite for self-contained backups.
+  /// Preferred over imageUrl for new images. No data: prefix.
+  TextColumn get imageB64 => text().nullable()();
 
   // Pricing (Default / Master Reference)
   RealColumn get mrp => real().withDefault(const Constant(0.0))();

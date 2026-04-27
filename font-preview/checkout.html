@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Luxe | Premium E-Commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased selection:bg-brand-500 selection:text-white flex flex-col min-h-screen">
+
+    <!-- Minimal Header -->
+    <header class="bg-white border-b border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center lg:justify-start">
+            <a href="index.html" class="text-3xl font-extrabold text-gray-900 tracking-tighter">LUXE.</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        
+        <div class="lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start flex flex-col-reverse lg:flex-row">
+            
+            <!-- Left Column: Forms -->
+            <div class="lg:col-span-7 pt-10 lg:pt-0">
+                <form>
+                    
+                    <!-- Contact Information -->
+                    <section aria-labelledby="contact-heading" class="mb-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 id="contact-heading" class="text-lg font-medium text-gray-900">Contact information</h2>
+                            <p class="text-sm font-medium text-gray-500">Already have an account? <a href="#" class="text-brand-600 hover:text-brand-500">Log in</a></p>
+                        </div>
+                        <div class="mt-4">
+                            <label for="email-address" class="block text-sm font-medium text-gray-700">Email address</label>
+                            <div class="mt-1">
+                                <input type="email" id="email-address" name="email-address" autocomplete="email" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border" placeholder="you@example.com">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Shipping Address -->
+                    <section aria-labelledby="shipping-heading" class="mb-10">
+                        <h2 id="shipping-heading" class="text-lg font-medium text-gray-900 mb-4">Shipping address</h2>
+                        <div class="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                            <div class="sm:col-span-2">
+                                <label for="country" class="block text-sm font-medium text-gray-700">Country / Region</label>
+                                <div class="mt-1">
+                                    <select id="country" name="country" autocomplete="country" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border bg-white">
+                                        <option>United States</option>
+                                        <option>Canada</option>
+                                        <option>Mexico</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="first-name" class="block text-sm font-medium text-gray-700">First name</label>
+                                <div class="mt-1">
+                                    <input type="text" id="first-name" name="first-name" autocomplete="given-name" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="last-name" class="block text-sm font-medium text-gray-700">Last name</label>
+                                <div class="mt-1">
+                                    <input type="text" id="last-name" name="last-name" autocomplete="family-name" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label for="company" class="block text-sm font-medium text-gray-700">Company (optional)</label>
+                                <div class="mt-1">
+                                    <input type="text" name="company" id="company" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                                <div class="mt-1">
+                                    <input type="text" name="address" id="address" autocomplete="street-address" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label for="apartment" class="block text-sm font-medium text-gray-700">Apartment, suite, etc.</label>
+                                <div class="mt-1">
+                                    <input type="text" name="apartment" id="apartment" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="city" class="block text-sm font-medium text-gray-700">City</label>
+                                <div class="mt-1">
+                                    <input type="text" name="city" id="city" autocomplete="address-level2" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="state" class="block text-sm font-medium text-gray-700">State / Province</label>
+                                <div class="mt-1">
+                                    <input type="text" name="state" id="state" autocomplete="address-level1" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="postal-code" class="block text-sm font-medium text-gray-700">Postal code</label>
+                                <div class="mt-1">
+                                    <input type="text" name="postal-code" id="postal-code" autocomplete="postal-code" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-700">Phone</label>
+                                <div class="mt-1">
+                                    <input type="text" name="phone" id="phone" autocomplete="tel" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Delivery Method -->
+                    <section aria-labelledby="delivery-heading" class="mb-10">
+                        <h2 id="delivery-heading" class="text-lg font-medium text-gray-900 mb-4">Delivery method</h2>
+                        <div class="space-y-4">
+                            <label class="relative flex cursor-pointer rounded-lg border border-gray-300 bg-white p-4 shadow-sm focus:outline-none hover:border-gray-400">
+                                <input type="radio" name="delivery-method" value="Standard" class="sr-only" aria-labelledby="delivery-standard-label" aria-describedby="delivery-standard-description" checked>
+                                <div class="flex w-full justify-between items-center">
+                                    <div class="flex items-center">
+                                        <div class="h-4 w-4 rounded-full border border-gray-300 flex items-center justify-center bg-brand-600">
+                                            <div class="h-1.5 w-1.5 rounded-full bg-white"></div>
+                                        </div>
+                                        <div class="ml-3 flex flex-col">
+                                            <span id="delivery-standard-label" class="block text-sm font-medium text-gray-900">Standard</span>
+                                            <span id="delivery-standard-description" class="block text-sm text-gray-500">4–10 business days</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">$5.00</span>
+                                </div>
+                            </label>
+
+                            <label class="relative flex cursor-pointer rounded-lg border border-gray-300 bg-white p-4 shadow-sm focus:outline-none hover:border-gray-400">
+                                <input type="radio" name="delivery-method" value="Express" class="sr-only" aria-labelledby="delivery-express-label" aria-describedby="delivery-express-description">
+                                <div class="flex w-full justify-between items-center">
+                                    <div class="flex items-center">
+                                        <div class="h-4 w-4 rounded-full border border-gray-300"></div>
+                                        <div class="ml-3 flex flex-col">
+                                            <span id="delivery-express-label" class="block text-sm font-medium text-gray-900">Express</span>
+                                            <span id="delivery-express-description" class="block text-sm text-gray-500">2–5 business days</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">$16.00</span>
+                                </div>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Payment -->
+                    <section aria-labelledby="payment-heading" class="mb-10">
+                        <h2 id="payment-heading" class="text-lg font-medium text-gray-900 mb-4">Payment</h2>
+                        
+                        <div class="mt-4">
+                            <fieldset>
+                                <legend class="sr-only">Payment type</legend>
+                                <div class="space-y-4 sm:flex sm:items-center sm:space-y-0 sm:space-x-10">
+                                    <div class="flex items-center">
+                                        <input id="credit-card" name="payment-type" type="radio" checked class="focus:ring-brand-500 h-4 w-4 text-brand-600 border-gray-300">
+                                        <label for="credit-card" class="ml-3 block text-sm font-medium text-gray-700"> Credit card </label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="paypal" name="payment-type" type="radio" class="focus:ring-brand-500 h-4 w-4 text-brand-600 border-gray-300">
+                                        <label for="paypal" class="ml-3 block text-sm font-medium text-gray-700"> PayPal </label>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <div class="mt-6 grid grid-cols-4 gap-y-6 gap-x-4 border border-gray-200 rounded-lg p-4 sm:p-6 bg-white shadow-sm">
+                                <div class="col-span-4">
+                                    <label for="card-number" class="block text-sm font-medium text-gray-700">Card number</label>
+                                    <div class="mt-1">
+                                        <input type="text" id="card-number" name="card-number" autocomplete="cc-number" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                    </div>
+                                </div>
+
+                                <div class="col-span-4">
+                                    <label for="name-on-card" class="block text-sm font-medium text-gray-700">Name on card</label>
+                                    <div class="mt-1">
+                                        <input type="text" id="name-on-card" name="name-on-card" autocomplete="cc-name" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                    </div>
+                                </div>
+
+                                <div class="col-span-2">
+                                    <label for="expiration-date" class="block text-sm font-medium text-gray-700">Expiration date (MM/YY)</label>
+                                    <div class="mt-1">
+                                        <input type="text" name="expiration-date" id="expiration-date" autocomplete="cc-exp" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                    </div>
+                                </div>
+
+                                <div class="col-span-2">
+                                    <label for="cvc" class="block text-sm font-medium text-gray-700">CVC</label>
+                                    <div class="mt-1">
+                                        <input type="text" name="cvc" id="cvc" autocomplete="csc" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="border-t border-gray-200 pt-6">
+                        <button type="submit" class="w-full bg-brand-600 border border-transparent rounded-md shadow-sm py-4 px-4 text-base font-bold text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors">
+                            Pay $172.40
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Right Column: Order Summary -->
+            <div class="lg:col-span-5 bg-white rounded-lg border border-gray-200 shadow-sm top-10 lg:sticky sticky-0 mt-8 lg:mt-0 mb-8 lg:mb-0">
+                <div class="p-6 sm:p-8">
+                    <h2 class="text-lg font-medium text-gray-900 mb-6">Order summary</h2>
+                    
+                    <ul class="divide-y divide-gray-200 mb-6">
+                        <!-- Item 1 -->
+                        <li class="flex py-4">
+                            <div class="flex-shrink-0 relative">
+                                <img src="https://images.unsplash.com/photo-1572569432650-717e13cb0938?ixlib=rb-1.2.1&auto=format&fit=crop&w=150&q=80" alt="Classic White Tee" class="w-16 h-16 rounded-md object-center object-cover border border-gray-200">
+                                <span class="absolute -top-2 -right-2 bg-gray-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">1</span>
+                            </div>
+                            <div class="ml-4 flex-1 flex flex-col justify-center">
+                                <h3 class="text-sm font-medium text-gray-900">Classic White Tee</h3>
+                                <p class="text-xs text-gray-500 mt-1">White / M</p>
+                            </div>
+                            <div class="ml-4 text-right flex flex-col justify-center">
+                                <p class="text-sm font-medium text-gray-900">$35.00</p>
+                            </div>
+                        </li>
+
+                        <!-- Item 2 -->
+                        <li class="flex py-4">
+                            <div class="flex-shrink-0 relative">
+                                <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?ixlib=rb-1.2.1&auto=format&fit=crop&w=150&q=80" alt="Leather Jacket" class="w-16 h-16 rounded-md object-center object-cover border border-gray-200">
+                                <span class="absolute -top-2 -right-2 bg-gray-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">1</span>
+                            </div>
+                            <div class="ml-4 flex-1 flex flex-col justify-center">
+                                <h3 class="text-sm font-medium text-gray-900">Leather Moto Jacket</h3>
+                                <p class="text-xs text-gray-500 mt-1">Black / L</p>
+                            </div>
+                            <div class="ml-4 text-right flex flex-col justify-center">
+                                <p class="text-sm font-medium text-gray-900">$120.00</p>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <!-- Discount Code -->
+                    <div class="mb-6 pt-6 border-t border-gray-200">
+                        <form class="flex gap-2">
+                            <label for="discount-code" class="sr-only">Discount code</label>
+                            <input type="text" id="discount-code" name="discount-code" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3 border" placeholder="Discount code">
+                            <button type="button" class="bg-gray-200 text-gray-700 font-medium px-4 rounded-md hover:bg-gray-300 transition-colors">Apply</button>
+                        </form>
+                    </div>
+
+                    <dl class="space-y-4 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <dt>Subtotal</dt>
+                            <dd class="font-medium text-gray-900">$155.00</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt>Shipping</dt>
+                            <dd class="font-medium text-gray-900">$5.00</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt>Taxes</dt>
+                            <dd class="font-medium text-gray-900">$12.40</dd>
+                        </div>
+                        <div class="border-t border-gray-200 pt-4 flex justify-between text-base font-medium text-gray-900">
+                            <dt>Total</dt>
+                            <dd class="text-lg font-bold text-gray-900">
+                                <span class="text-gray-500 text-sm font-normal mr-2">USD</span>$172.40
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Minimal Footer -->
+    <footer class="bg-white border-t border-gray-200 py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+            <p>&copy; 2026 LUXE. All rights reserved.</p>
+            <div class="flex space-x-4 mt-4 md:mt-0">
+                <a href="#" class="hover:text-brand-600 transition-colors">Refund policy</a>
+                <a href="#" class="hover:text-brand-600 transition-colors">Privacy policy</a>
+                <a href="#" class="hover:text-brand-600 transition-colors">Terms of service</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

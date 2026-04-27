@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../locator.dart';
 import '../services/settings_service.dart';
 import '../services/sync_service.dart';
 import '../services/auth_service.dart';
+import '../services/auto_sync_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -110,6 +112,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  String _formatSyncTime(DateTime? dt) {
+    if (dt == null) return '—';
+    return DateFormat('yyyy-MM-dd HH:mm:ss').format(dt);
   }
 
   @override
@@ -248,6 +255,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ],
                               ),
+                            ),
+                            const SizedBox(height: 16),
+                            ValueListenableBuilder<SyncStatus>(
+                              valueListenable: getIt<AutoSyncService>().status,
+                              builder: (context, status, _) {
+                                final onlineLabel =
+                                    status.isOnline ? 'Online' : 'Offline';
+                                final syncingLabel =
+                                    status.isSyncing ? 'Syncing…' : 'Idle';
+                                final lastPull = _formatSyncTime(status.lastPullAt);
+                                final lastPush = _formatSyncTime(status.lastPushAt);
+                                final lastError = status.lastError;
+                                final lastErrorAt =
+                                    _formatSyncTime(status.lastErrorAt);
+
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            status.isOnline
+                                                ? Icons.wifi
+                                                : Icons.wifi_off,
+                                            size: 16,
+                                            color: status.isOnline
+                                                ? Colors.green.shade700
+                                                : Colors.red.shade700,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Status: $onlineLabel • $syncingLabel',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Last pull: $lastPull',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Last push: $lastPush',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                      if (lastError != null && lastError.isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Last error ($lastErrorAt): $lastError',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            color: Colors.red.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(height: 16),
                             _field(_serverUrlCtrl, 'Server URL',

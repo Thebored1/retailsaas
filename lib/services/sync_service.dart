@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../locator.dart';
 import '../data/database/app_database.dart';
 import './settings_service.dart';
@@ -20,6 +22,43 @@ class SyncService {
     'Content-Type': 'application/json',
     'X-Api-Key': await _settings.apiKey,
   };
+
+  Future<SharedPreferences> _prefs() => SharedPreferences.getInstance();
+
+  Future<String?> _getLastImageSignature(String productId) async {
+    final p = await _prefs();
+    return p.getString('img_sig_$productId');
+  }
+
+  Future<void> _setLastImageSignature(
+    String productId,
+    String signature,
+  ) async {
+    final p = await _prefs();
+    await p.setString('img_sig_$productId', signature);
+  }
+
+  Future<String> _computeImageSignature(String? imageUrl) async {
+    final url = (imageUrl ?? '').trim();
+    if (url.isEmpty) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return 'url:$url';
+    }
+    if (url.startsWith('data:image/')) {
+      return 'base64:${url.length}:${url.hashCode}';
+    }
+    final file = File(url);
+    if (!await file.exists()) return 'missing:$url';
+    final stat = await file.stat();
+    return 'file:$url:${stat.modified.millisecondsSinceEpoch}:${stat.size}';
+  }
+
+  Future<String?> _readLocalImageBase64(String imagePath) async {
+    final file = File(imagePath);
+    if (!await file.exists()) return null;
+    final bytes = await file.readAsBytes();
+    return base64Encode(bytes);
+  }
 
   Future<bool> checkOnline() async {
     try {
@@ -44,9 +83,11 @@ class SyncService {
       final baseUrl = await _getBaseUrl();
       final headers = await _getHeaders();
 
-      final payload = {
-        "mode": "full",
-        "products": products.map((p) => {
+      final payloadProducts = <Map<String, dynamic>>[];
+      final imageSigUpdates = <String, String>{};
+
+      for (final p in products) {
+        final productMap = {
           "external_id": p.id,
           "name": p.name,
           "sku": "",
@@ -54,7 +95,51 @@ class SyncService {
           "hsn_code": p.hsnCode,
           "gst_rate": p.gstRate.toString(),
           "is_active": p.isActive,
-        }).toList()
+          "updated_at": p.updatedAt.toIso8601String(),
+        };
+
+        // Prefer the stored base64 WebP over the legacy imageUrl path
+        final imageB64 = (p.imageB64 ?? '').trim();
+        if (imageB64.isNotEmpty) {
+          final sig = 'b64:${imageB64.length}:${imageB64.hashCode}';
+          final lastSig = await _getLastImageSignature(p.id) ?? '__unset__';
+          if (sig != lastSig) {
+            productMap["image_data"] = imageB64;
+            imageSigUpdates[p.id] = sig;
+          }
+        } else {
+          // Legacy: fall back to imageUrl (file path or http URL)
+          final imageUrlRaw = (p.imageUrl ?? '').trim();
+          final sig = await _computeImageSignature(imageUrlRaw);
+          final lastSig = await _getLastImageSignature(p.id) ?? '__unset__';
+
+          if (sig != lastSig) {
+            if (imageUrlRaw.isEmpty) {
+              productMap["image_clear"] = true;
+              imageSigUpdates[p.id] = sig;
+            } else if (imageUrlRaw.startsWith('http://') ||
+                imageUrlRaw.startsWith('https://')) {
+              productMap["image_url"] = imageUrlRaw;
+              imageSigUpdates[p.id] = sig;
+            } else if (imageUrlRaw.startsWith('data:image/')) {
+              productMap["image_data"] = imageUrlRaw.split(',').last;
+              imageSigUpdates[p.id] = sig;
+            } else {
+              final imageData = await _readLocalImageBase64(imageUrlRaw);
+              if (imageData != null) {
+                productMap["image_data"] = imageData;
+                imageSigUpdates[p.id] = sig;
+              }
+            }
+          }
+        }
+
+        payloadProducts.add(productMap);
+      }
+
+      final payload = {
+        "mode": "full",
+        "products": payloadProducts,
       };
 
       final response = await http.post(
@@ -66,8 +151,51 @@ class SyncService {
       if (response.statusCode != 200) {
         throw Exception('Failed to push products: ${response.statusCode} - ${response.body}');
       }
+
+      for (final entry in imageSigUpdates.entries) {
+        await _setLastImageSignature(entry.key, entry.value);
+      }
     } catch (e) {
       debugPrint('Sync Error (Products): $e');
+      rethrow;
+    }
+  }
+
+  /// Pushes all Categories (with images) from Drift to the Webfront
+  Future<void> pushCategories() async {
+    try {
+      final categories = await _db.select(_db.categories).get();
+      final baseUrl = await _getBaseUrl();
+      final headers = await _getHeaders();
+
+      final payloadCategories = categories.map((c) {
+        final map = <String, dynamic>{
+          "id": c.id,
+          "name": c.name,
+        };
+        final img = (c.imageB64 ?? '').trim();
+        if (img.isNotEmpty) {
+          map["image_data"] = img;
+        }
+        return map;
+      }).toList();
+
+      final payload = {
+        "mode": "full",
+        "categories": payloadCategories,
+      };
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/sync/categories'),
+        headers: headers,
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to push categories: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Sync Error (Categories): $e');
       rethrow;
     }
   }

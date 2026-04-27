@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:retailsaas/locator.dart';
 import 'package:retailsaas/screens/product_selection_screen.dart';
 import 'package:retailsaas/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,7 +16,28 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
+  bool _rememberMe = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPhone = prefs.getString('remember_phone');
+    final savedPass = prefs.getString('remember_pass');
+    
+    if (savedPhone != null && savedPass != null) {
+      setState(() {
+        _usernameCtrl.text = savedPhone;
+        _passwordCtrl.text = savedPass;
+        _rememberMe = true;
+      });
+    }
+  }
 
   Future<void> _login() async {
     setState(() {
@@ -23,10 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
-    final success = await getIt<AuthService>().login(
-      _usernameCtrl.text.trim(),
-      _passwordCtrl.text.trim(),
-    );
+    final phone = _usernameCtrl.text.trim();
+    final pass = _passwordCtrl.text.trim();
+
+    final success = await getIt<AuthService>().login(phone, pass);
 
     if (mounted) {
       setState(() {
@@ -34,6 +56,15 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (success) {
+        final prefs = await SharedPreferences.getInstance();
+        if (_rememberMe) {
+          await prefs.setString('remember_phone', phone);
+          await prefs.setString('remember_pass', pass);
+        } else {
+          await prefs.remove('remember_phone');
+          await prefs.remove('remember_pass');
+        }
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -143,6 +174,39 @@ class _LoginScreenState extends State<LoginScreen> {
                   prefixIcon: const Icon(Icons.lock_outline),
                 ),
                 onSubmitted: (_) => _login(),
+              ),
+              const SizedBox(height: 12),
+              
+              // Remember Me Checkbox
+              Row(
+                children: [
+                  SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: Checkbox(
+                      value: _rememberMe,
+                      onChanged: (val) {
+                        setState(() => _rememberMe = val ?? false);
+                      },
+                      activeColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _rememberMe = !_rememberMe),
+                    child: Text(
+                      'Remember me',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               if (_errorMessage != null)

@@ -152,7 +152,6 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
 
       case 'Tax Summary':
         return const TaxSummaryScreen();
-      case 'Day End Report':
       case 'Expense Tracker':
       case 'Profit & Loss':
         return _buildPlaceholder(_selectedItem);

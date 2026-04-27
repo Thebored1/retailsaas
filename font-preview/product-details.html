@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic White Tee - Luxe | Premium E-Commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Navigation -->
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold text-gray-900 tracking-tighter">LUXE.</a>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-600 hover:text-brand-600 font-medium transition-colors">Men</a>
+                    <a href="#" class="text-gray-600 hover:text-brand-600 font-medium transition-colors">Women</a>
+                    <a href="#" class="text-gray-600 hover:text-brand-600 font-medium transition-colors">Accessories</a>
+                    <a href="#" class="text-gray-600 hover:text-brand-600 font-medium transition-colors">Sale</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-500 hover:text-gray-900">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </button>
+                    <button class="text-gray-500 hover:text-gray-900 relative">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                        <span class="absolute top-0 right-0 -mt-1 -mr-1 bg-brand-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">3</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumbs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <nav class="flex text-sm text-gray-500 font-medium">
+            <a href="index.html" class="hover:text-gray-900 transition-colors">Home</a>
+            <span class="mx-2">/</span>
+            <a href="#" class="hover:text-gray-900 transition-colors">Men</a>
+            <span class="mx-2">/</span>
+            <a href="#" class="hover:text-gray-900 transition-colors">Essentials</a>
+            <span class="mx-2">/</span>
+            <span class="text-gray-900">Classic White Tee</span>
+        </nav>
+    </div>
+
+    <!-- Product Details Section -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
+            
+            <!-- Left: Image Gallery -->
+            <div class="flex flex-col-reverse lg:flex-row gap-4 lg:gap-6">
+                <!-- Thumbnails -->
+                <div class="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible py-2 lg:py-0 w-full lg:w-24 shrink-0">
+                    <button class="w-20 h-24 lg:w-24 lg:h-32 shrink-0 border-2 border-brand-500 rounded-lg overflow-hidden focus:outline-none">
+                        <img src="https://images.unsplash.com/photo-1572569432650-717e13cb0938?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" alt="Thumbnail 1" class="w-full h-full object-cover">
+                    </button>
+                    <button class="w-20 h-24 lg:w-24 lg:h-32 shrink-0 border-2 border-transparent hover:border-gray-300 rounded-lg overflow-hidden focus:outline-none transition-colors">
+                        <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" alt="Thumbnail 2" class="w-full h-full object-cover">
+                    </button>
+                    <button class="w-20 h-24 lg:w-24 lg:h-32 shrink-0 border-2 border-transparent hover:border-gray-300 rounded-lg overflow-hidden focus:outline-none transition-colors">
+                        <img src="https://images.unsplash.com/photo-1581655353564-df123a1eb820?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" alt="Thumbnail 3" class="w-full h-full object-cover">
+                    </button>
+                </div>
+                
+                <!-- Main Image -->
+                <div class="w-full bg-gray-100 rounded-xl overflow-hidden aspect-w-3 aspect-h-4 lg:aspect-auto lg:h-[600px]">
+                    <img src="https://images.unsplash.com/photo-1572569432650-717e13cb0938?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80" alt="Classic White Tee Main Image" class="w-full h-full object-cover object-center">
+                </div>
+            </div>
+
+            <!-- Right: Product Info -->
+            <div class="mt-10 lg:mt-0 px-2 sm:px-0">
+                <div class="mb-6">
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-2">Classic White Tee</h1>
+                    <div class="flex items-center justify-between">
+                        <p class="text-2xl font-bold text-gray-900">$35.00</p>
+                        <div class="flex items-center">
+                            <div class="flex items-center text-yellow-400">
+                                <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                <svg class="w-5 h-5 text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-500 hover:text-brand-600 cursor-pointer">117 reviews</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="prose prose-sm text-gray-500 mb-8">
+                    <p>
+                        The perfectly tailored classic white tee. Made from 100% organic heavy-weight cotton, this shirt offers a structured yet breathable fit that holds its shape wash after wash. An essential foundation for any modern wardrobe.
+                    </p>
+                </div>
+
+                <div class="mb-8 border-t border-gray-200 pt-8">
+                    <!-- Color Options -->
+                    <div class="mb-6">
+                        <h3 class="text-sm text-gray-900 font-medium mb-3">Color</h3>
+                        <div class="flex items-center space-x-3">
+                            <button class="w-10 h-10 rounded-full border-2 border-brand-500 bg-white shadow-sm focus:outline-none" aria-label="White"></button>
+                            <button class="w-10 h-10 rounded-full border-2 border-transparent bg-gray-900 hover:border-gray-300 shadow-sm focus:outline-none transition-colors" aria-label="Black"></button>
+                            <button class="w-10 h-10 rounded-full border-2 border-transparent bg-gray-400 hover:border-gray-300 shadow-sm focus:outline-none transition-colors" aria-label="Gray"></button>
+                            <button class="w-10 h-10 rounded-full border-2 border-transparent bg-blue-900 hover:border-gray-300 shadow-sm focus:outline-none transition-colors" aria-label="Navy"></button>
+                        </div>
+                    </div>
+
+                    <!-- Size Options -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm text-gray-900 font-medium">Size</h3>
+                            <a href="#" class="text-sm text-brand-600 hover:text-brand-500 font-medium">Size guide</a>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3 sm:grid-cols-6 lg:grid-cols-4">
+                            <button class="border border-gray-300 rounded-md py-3 text-sm font-medium text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">XS</button>
+                            <button class="border border-brand-500 ring-1 ring-brand-500 rounded-md py-3 text-sm font-medium text-brand-700 bg-brand-50 focus:outline-none transition-colors">S</button>
+                            <button class="border border-gray-300 rounded-md py-3 text-sm font-medium text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">M</button>
+                            <button class="border border-gray-300 rounded-md py-3 text-sm font-medium text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">L</button>
+                            <button class="border border-gray-300 rounded-md py-3 text-sm font-medium text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">XL</button>
+                            <button class="border border-gray-200 bg-gray-50 rounded-md py-3 text-sm font-medium text-gray-400 cursor-not-allowed" disabled>XXL</button>
+                        </div>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-8">
+                        <h3 class="text-sm text-gray-900 font-medium mb-3">Quantity</h3>
+                        <div class="flex items-center w-32 border border-gray-300 rounded-md">
+                            <button class="px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors">-</button>
+                            <input type="number" value="1" min="1" class="w-full text-center border-0 focus:ring-0 text-gray-900 font-medium py-2 outline-none appearance-none" style="-moz-appearance: textfield;">
+                            <button class="px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button type="button" class="flex-1 bg-gray-900 text-white py-4 px-8 rounded-md font-medium text-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors shadow-sm flex justify-center items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                            Add to bag
+                        </button>
+                        <button type="button" class="flex-1 bg-brand-600 text-white py-4 px-8 rounded-md font-medium text-lg hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors shadow-sm">
+                            Buy it now
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Product Perks -->
+                <div class="grid grid-cols-2 gap-4 mt-8 border-t border-gray-200 pt-8">
+                    <div class="flex items-center text-sm text-gray-500">
+                        <svg class="w-5 h-5 mr-3 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                        Free shipping on orders over $100
+                    </div>
+                    <div class="flex items-center text-sm text-gray-500">
+                        <svg class="w-5 h-5 mr-3 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Free returns within 30 days
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Details/Specs Accordion Section -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-gray-200">
+        <div class="max-w-3xl mx-auto divide-y divide-gray-200">
+            <!-- Accordion Item 1 -->
+            <div class="py-6">
+                <button class="flex w-full items-center justify-between text-left focus:outline-none group">
+                    <span class="text-lg font-medium text-gray-900 group-hover:text-brand-600 transition-colors">Features & Materials</span>
+                    <span class="ml-6 flex items-center">
+                        <svg class="h-6 w-6 text-brand-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </span>
+                </button>
+                <div class="mt-4 prose prose-sm text-gray-500">
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li>100% Organic Cotton</li>
+                        <li>Heavyweight 220gsm jersey fabric</li>
+                        <li>Pre-shrunk for zero shrinkage after washing</li>
+                        <li>Reinforced neckband to maintain shape</li>
+                        <li>Ethically manufactured in Portugal</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Accordion Item 2 -->
+            <div class="py-6">
+                <button class="flex w-full items-center justify-between text-left focus:outline-none group">
+                    <span class="text-lg font-medium text-gray-900 group-hover:text-brand-600 transition-colors">Care Instructions</span>
+                    <span class="ml-6 flex items-center">
+                        <svg class="h-6 w-6 text-gray-400 group-hover:text-brand-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                    </span>
+                </button>
+                <div class="hidden mt-4 prose prose-sm text-gray-500">
+                    <!-- Content would go here, hidden by default in this mockup -->
+                </div>
+            </div>
+
+            <!-- Accordion Item 3 -->
+            <div class="py-6">
+                <button class="flex w-full items-center justify-between text-left focus:outline-none group">
+                    <span class="text-lg font-medium text-gray-900 group-hover:text-brand-600 transition-colors">Shipping & Returns</span>
+                    <span class="ml-6 flex items-center">
+                        <svg class="h-6 w-6 text-gray-400 group-hover:text-brand-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                    </span>
+                </button>
+                <div class="hidden mt-4 prose prose-sm text-gray-500">
+                    <!-- Content would go here, hidden by default in this mockup -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Products -->
+    <section class="py-16 bg-white border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight mb-8">You might also like</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
+                <!-- Product 1 -->
+                <div class="group relative">
+                    <div class="w-full min-h-80 bg-gray-200 rounded-lg overflow-hidden lg:h-80 lg:aspect-none">
+                        <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Related Product 1" class="w-full h-full object-center object-cover group-hover:opacity-75 transition-opacity">
+                    </div>
+                    <div class="mt-4 flex justify-between">
+                        <div>
+                            <h3 class="text-sm text-gray-700 font-medium">
+                                <a href="#">
+                                    <span aria-hidden="true" class="absolute inset-0"></span>
+                                    Leather Jacket
+                                </a>
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">Outerwear</p>
+                        </div>
+                        <p class="text-sm font-medium text-gray-900">$120.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="group relative">
+                    <div class="w-full min-h-80 bg-gray-200 rounded-lg overflow-hidden lg:h-80 lg:aspect-none">
+                        <img src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Related Product 2" class="w-full h-full object-center object-cover group-hover:opacity-75 transition-opacity">
+                    </div>
+                    <div class="mt-4 flex justify-between">
+                        <div>
+                            <h3 class="text-sm text-gray-700 font-medium">
+                                <a href="#">
+                                    <span aria-hidden="true" class="absolute inset-0"></span>
+                                    Vintage Denim
+                                </a>
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">Jeans</p>
+                        </div>
+                        <p class="text-sm font-medium text-gray-900">$85.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="group relative">
+                    <div class="w-full min-h-80 bg-gray-200 rounded-lg overflow-hidden lg:h-80 lg:aspect-none">
+                        <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Related Product 3" class="w-full h-full object-center object-cover group-hover:opacity-75 transition-opacity">
+                    </div>
+                    <div class="mt-4 flex justify-between">
+                        <div>
+                            <h3 class="text-sm text-gray-700 font-medium">
+                                <a href="#">
+                                    <span aria-hidden="true" class="absolute inset-0"></span>
+                                    Summer Dress
+                                </a>
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">Dresses</p>
+                        </div>
+                        <p class="text-sm font-medium text-gray-900">$45.00</p>
+                    </div>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="group relative">
+                    <div class="w-full min-h-80 bg-gray-200 rounded-lg overflow-hidden lg:h-80 lg:aspect-none">
+                        <img src="https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Related Product 4" class="w-full h-full object-center object-cover group-hover:opacity-75 transition-opacity">
+                    </div>
+                    <div class="mt-4 flex justify-between">
+                        <div>
+                            <h3 class="text-sm text-gray-700 font-medium">
+                                <a href="#">
+                                    <span aria-hidden="true" class="absolute inset-0"></span>
+                                    Leather Tote
+                                </a>
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">Accessories</p>
+                        </div>
+                        <p class="text-sm font-medium text-gray-900">$95.00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div class="col-span-1 md:col-span-1">
+                    <span class="text-2xl font-bold tracking-tighter block mb-4">LUXE.</span>
+                    <p class="text-gray-400 text-sm">Elevating your everyday style with premium quality products.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4 text-gray-200">Shop</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Men's</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Women's</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Accessories</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">New Arrivals</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4 text-gray-200">Company</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Sustainability</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Press</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4 text-gray-200">Support</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Shipping & Returns</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Size Guide</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+                <p>&copy; 2026 LUXE. All rights reserved.</p>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -53,6 +53,9 @@ dependencies:
   http: ^1.6.0
   flutter_dotenv: ^6.0.0
   shared_preferences: ^2.5.4
+  file_picker: ^8.0.0
+  spreadsheet_decoder: ^2.3.0
+  image: ^4.2.0
 
 dev_dependencies:
   flutter_test:
@@ -66,6 +69,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.30.0
   build_runner: ^2.10.4
+  inno_bundle: ^0.11.2
+
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -108,3 +113,17 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+inno_bundle:
+  name: RetailSaaS
+  version: 1.0.0+1
+  description: Hybrid Retail SaaS (O2O - Online to Offline)
+  publisher: paper
+  url: https://your-website.com
+  setup_icon: assets/app_icon.ico
+  id: c9c33de0-3987-11f1-8179-d1824869511d
+  languages:
+    - english
+  files:
+    - path: "backend/db.sqlite"
+      destination: "backend"

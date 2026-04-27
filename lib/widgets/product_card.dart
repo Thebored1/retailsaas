@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/image_helper.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/product_inventory_view.dart';
 import 'dart:io';
