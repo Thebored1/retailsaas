@@ -15,7 +15,8 @@ class SyncService {
 
   Future<String> _getBaseUrl() async {
     final url = await _settings.serverUrl;
-    return url.isNotEmpty ? url : 'http://127.0.0.1:8000/api/v1';
+    final cleaned = url.trim().replaceAll(RegExp(r'/+$'), '');
+    return cleaned.isNotEmpty ? cleaned : 'http://127.0.0.1:8000/api/v1';
   }
 
   Future<Map<String, String>> _getHeaders() async => {
@@ -102,11 +103,8 @@ class SyncService {
         final imageB64 = (p.imageB64 ?? '').trim();
         if (imageB64.isNotEmpty) {
           final sig = 'b64:${imageB64.length}:${imageB64.hashCode}';
-          final lastSig = await _getLastImageSignature(p.id) ?? '__unset__';
-          if (sig != lastSig) {
-            productMap["image_data"] = imageB64;
-            imageSigUpdates[p.id] = sig;
-          }
+          productMap["image_data"] = imageB64;
+          imageSigUpdates[p.id] = sig;
         } else {
           // Legacy: fall back to imageUrl (file path or http URL)
           final imageUrlRaw = (p.imageUrl ?? '').trim();

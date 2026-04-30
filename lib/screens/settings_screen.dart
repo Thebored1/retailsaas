@@ -84,7 +84,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         addrState:   _addrStateCtrl.text.trim(),
         addrPin:     _addrPinCtrl.text.trim(),
         addrCountry: _addrCountryCtrl.text.trim(),
-        serverUrl:   _serverUrlCtrl.text.trim(),
+        serverUrl:   _serverUrlCtrl.text.trim().replaceAll(RegExp(r'/+$'), ''),
         apiKey:      _apiKeyCtrl.text.trim(),
         requireDeliveryPhoto: _requireDeliveryPhoto,
       );
