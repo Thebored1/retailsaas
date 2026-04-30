@@ -112,9 +112,9 @@ class _AdminSideMenuState extends State<AdminSideMenu> {
                 children: [
                   _buildSingleMenuItem(
                     icon: Icons.grid_view,
-                    label: 'Dashboard',
-                    isSelected: widget.selectedItem == 'Dashboard',
-                    onTap: () => widget.onItemSelected('Dashboard'),
+                    label: 'Sales',
+                    isSelected: widget.selectedItem == 'Sales',
+                    onTap: () => widget.onItemSelected('Sales'),
                   ),
                   const SizedBox(height: 4),
                   _buildSingleMenuItem(

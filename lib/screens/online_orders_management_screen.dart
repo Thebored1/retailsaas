@@ -195,8 +195,9 @@ class _OnlineOrdersManagementScreenState
     final expectedText = (order['expected_delivery_text'] ?? '').toString();
     final expectedStart = (order['expected_delivery_start'] ?? '').toString();
     final expectedEnd = (order['expected_delivery_end'] ?? '').toString();
-    final initialDate = _parseDate(order['delivery_date']) ??
-        DateTime.now().add(const Duration(days: 1));
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final initialDate = _parseDate(order['delivery_date']) ?? tomorrow;
 
     final activeSlots = _deliverySlots.where((s) => s.isActive).toList();
     _DeliverySlotOption? selectedSlot;
@@ -275,8 +276,8 @@ class _OnlineOrdersManagementScreenState
                       final picked = await showDatePicker(
                         context: context,
                         initialDate: selectedDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 30)),
+                        firstDate: DateTime(now.year, now.month, now.day),
+                        lastDate: now.add(const Duration(days: 30)),
                       );
                       if (picked == null) return;
                       setDialogState(() {
@@ -580,7 +581,7 @@ class _OnlineOrdersManagementScreenState
                 color: Colors.grey.shade600,
               ),
             ),
-          if (expectedText.isNotEmpty)
+          if (expectedText.isNotEmpty && (status == 'PENDING' || deliveryDate == null))
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(

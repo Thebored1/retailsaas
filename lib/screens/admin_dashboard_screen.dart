@@ -24,6 +24,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _isLoadingSlots = false;
   List<_DeliverySlotOption> _deliverySlots = [];
   Timer? _ordersRefreshTimer;
+  String _searchQuery = '';
+  bool _isSearchVisibleMobile = false;
 
   @override
   void initState() {
@@ -100,8 +102,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final expectedText = (order['expected_delivery_text'] ?? '').toString();
     final expectedStart = (order['expected_delivery_start'] ?? '').toString();
     final expectedEnd = (order['expected_delivery_end'] ?? '').toString();
-    final initialDate = _parseDate(order['delivery_date']) ??
-        DateTime.now().add(const Duration(days: 1));
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final initialDate = _parseDate(order['delivery_date']) ?? tomorrow;
 
     final activeSlots = _deliverySlots.where((s) => s.isActive).toList();
     _DeliverySlotOption? selectedSlot;
@@ -180,8 +183,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       final picked = await showDatePicker(
                         context: context,
                         initialDate: selectedDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 30)),
+                        firstDate: DateTime(now.year, now.month, now.day),
+                        lastDate: now.add(const Duration(days: 30)),
                       );
                       if (picked == null) return;
                       setDialogState(() {
@@ -433,39 +436,105 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Admin Dashboard',
-                              style: GoogleFonts.inter(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                    if (_isSearchVisibleMobile && isSmallScreen)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: TextField(
+                            onChanged: (val) =>
+                                setState(() => _searchQuery = val),
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: 'Search orders, customers...',
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.close, size: 16),
+                                onPressed: () => setState(() {
+                                  _isSearchVisibleMobile = false;
+                                  _searchQuery = '';
+                                }),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 11),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Sales Dashboard',
+                                style: GoogleFonts.inter(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Sales overview and analytics',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Search Bar
+                          if (!isSmallScreen)
+                            Expanded(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 48),
+                                child: Container(
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border:
+                                        Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: TextField(
+                                    onChanged: (val) =>
+                                        setState(() => _searchQuery = val),
+                                    decoration: const InputDecoration(
+                                      hintText: 'Search orders, customers...',
+                                      prefixIcon: Icon(Icons.search, size: 20),
+                                      border: InputBorder.none,
+                                      contentPadding:
+                                          EdgeInsets.symmetric(vertical: 11),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            Text(
-                              'Backoffice overview and analytics',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: Colors.grey,
+                          // Actions Row (Notifications)
+                          Row(
+                            children: [
+                              if (isSmallScreen)
+                                IconButton(
+                                  icon: const Icon(Icons.search),
+                                  onPressed: () => setState(
+                                      () => _isSearchVisibleMobile = true),
+                                ),
+                              _buildCompactNotification(
+                                _pendingOrders.length,
+                                label: 'Online Orders Pending',
                               ),
-                            ),
-                          ],
-                        ),
-                        // Actions Row (Notifications)
-                        Row(
-                          children: [
-                            _buildCompactNotification(
-                              _pendingOrders.length,
-                              label: 'Online Orders Pending',
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                            ],
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 20),
 
                     // Metrics Row (Compact)
@@ -796,23 +865,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ],
         const SizedBox(height: 8),
         Expanded(
-          child: _pendingOrders.isEmpty
-              ? Center(
-                  child: Text(
-                    'No pending online orders.',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
-                    ),
+          child: (() {
+            final filteredOrders = _pendingOrders.where((o) {
+              if (_searchQuery.isEmpty) return true;
+              final search = _searchQuery.toLowerCase();
+              final id = _parseOrderId(o).toString();
+              final customer =
+                  (o['customer_name'] ?? '').toString().toLowerCase();
+              return id.contains(search) || customer.contains(search);
+            }).toList();
+
+            if (filteredOrders.isEmpty) {
+              return Center(
+                child: Text(
+                  _pendingOrders.isEmpty
+                      ? 'No pending online orders.'
+                      : 'No orders match your search.',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
                   ),
-                )
-              : ListView.separated(
-                  itemCount: _pendingOrders.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 10),
-                  itemBuilder: (context, index) =>
-                      _buildPendingOrderRow(_pendingOrders[index]),
                 ),
+              );
+            }
+
+            return ListView.separated(
+              itemCount: filteredOrders.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 10),
+              itemBuilder: (context, index) =>
+                  _buildPendingOrderRow(filteredOrders[index]),
+            );
+          })(),
         ),
       ],
     );
@@ -905,7 +988,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
             ),
-          if (expectedText.isNotEmpty)
+          if (expectedText.isNotEmpty && order['status'] == 'PENDING')
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(

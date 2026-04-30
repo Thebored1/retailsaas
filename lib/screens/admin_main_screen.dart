@@ -19,10 +19,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:retailsaas/screens/audit_logs_screen.dart';
 import 'package:retailsaas/screens/finance/liquid_assets_screen.dart';
 import 'package:retailsaas/screens/finance/tax_summary_screen.dart';
+import 'package:retailsaas/screens/returns_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   final String initialItem;
-  const AdminMainScreen({super.key, this.initialItem = 'Dashboard'});
+  const AdminMainScreen({super.key, this.initialItem = 'Sales'});
 
   @override
   State<AdminMainScreen> createState() => _AdminMainScreenState();
@@ -112,11 +113,13 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
 
   Widget _buildContent() {
     switch (_selectedItem) {
-      case 'Dashboard':
+      case 'Sales':
         return AdminDashboardScreen(
           // Pass callback to allow dashboard to switch views (e.g. clicking a card)
           onNavigate: _handleItemSelected,
         );
+      case 'Sales Returns':
+        return const ReturnsScreen();
       case 'Settings':
         return const SettingsScreen();
       case 'Vendor Management':

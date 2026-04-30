@@ -3,6 +3,7 @@ import '../utils/image_helper.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/product_inventory_view.dart';
 import 'dart:io';
+import 'dart:convert';
 
 class ProductCard extends StatefulWidget {
   final ProductInventoryView item;
@@ -54,6 +55,9 @@ class _ProductCardState extends State<ProductCard> {
       }
     }
 
+    final imageUrl = (product.imageUrl ?? '').trim();
+    final imageB64 = (product.imageB64 ?? '').trim();
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAFB),
@@ -71,17 +75,18 @@ class _ProductCardState extends State<ProductCard> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 color: Colors.grey.shade300,
-                image: product.imageUrl != null
+                image: imageB64.isNotEmpty || imageUrl.isNotEmpty
                     ? DecorationImage(
-                        image: product.imageUrl!.startsWith('http')
-                            ? NetworkImage(product.imageUrl!)
-                            : FileImage(File(product.imageUrl!))
-                                  as ImageProvider,
+                        image: imageB64.isNotEmpty
+                            ? MemoryImage(base64Decode(imageB64))
+                            : (imageUrl.startsWith('http')
+                                ? NetworkImage(imageUrl)
+                                : FileImage(File(imageUrl)) as ImageProvider),
                         fit: BoxFit.cover,
                       )
                     : null,
               ),
-              child: product.imageUrl == null
+              child: imageB64.isEmpty && imageUrl.isEmpty
                   ? const Center(
                       child: Icon(Icons.image, color: Colors.grey, size: 40),
                     )

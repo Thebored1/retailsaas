@@ -249,6 +249,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final isMultiPrice =
         hasBatches && (item.minSellingPrice != item.maxSellingPrice);
 
+    final imageUrl = (item.product.imageUrl ?? '').trim();
+    final imageB64 = (item.product.imageB64 ?? '').trim();
+
     return ExpansionTile(
       shape: const Border(),
       collapsedShape: const Border(),
@@ -258,17 +261,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
         decoration: BoxDecoration(
           color: Colors.blue.shade50,
           borderRadius: BorderRadius.circular(8),
-          image: item.product.imageUrl != null
+          image: imageB64.isNotEmpty || imageUrl.isNotEmpty
               ? DecorationImage(
-                  image: item.product.imageUrl!.startsWith('http')
-                      ? NetworkImage(item.product.imageUrl!)
-                      : FileImage(File(item.product.imageUrl!))
-                            as ImageProvider,
+                  image: imageB64.isNotEmpty
+                      ? MemoryImage(base64Decode(imageB64))
+                      : (imageUrl.startsWith('http')
+                          ? NetworkImage(imageUrl)
+                          : FileImage(File(imageUrl)) as ImageProvider),
                   fit: BoxFit.cover,
                 )
               : null,
         ),
-        child: item.product.imageUrl == null
+        child: imageB64.isEmpty && imageUrl.isEmpty
             ? Icon(Icons.inventory_2_outlined, color: Colors.blue.shade700)
             : null,
       ),

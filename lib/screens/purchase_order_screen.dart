@@ -178,7 +178,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
               setState(() {
                 item['availableUoms'] = uoms
                     .map(
-                      (u) => {
+                      (u) => <String, dynamic>{
                         'name': u.uomName,
                         'factor': u.conversionFactor,
                         'isBase': u.isBase, // Store isBase for fallback logic
@@ -222,62 +222,76 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
     double? factor,
     List<dynamic>? uoms,
   }) async {
-    final index = _selectedItems.indexWhere(
-      (item) => item['id'] == product['id'],
-    );
+    if (!mounted) return;
+    try {
+      final index = _selectedItems.indexWhere(
+        (item) => item['id'] == product['id'],
+      );
 
-    if (index != -1) {
-      // Update existing
-      setState(() {
-        final currentQty = _selectedItems[index]['qty'] as int;
-        final newQty = currentQty + delta;
-        if (newQty <= 0) {
-          _selectedItems.removeAt(index);
-        } else {
-          _selectedItems[index]['qty'] = newQty;
-        }
-      });
-    } else if (delta > 0) {
-      // Add new
-      // Use passed UOM/Factor/List if available, else fetch
-      List<dynamic> uomList = uoms ?? [];
-      if (uomList.isEmpty) {
-        final dbUoms = await (_db.select(
-          _db.productUoms,
-        )..where((t) => t.productId.equals(product['id']))).get();
-        uomList = dbUoms
-            .map(
-              (u) => {
-                'name': u.uomName,
-                'factor': u.conversionFactor,
-                'isBase': u.isBase,
-              },
-            )
-            .toList();
-      }
-
-      // Default logic
-      String defaultUom = uom ?? "PCS";
-      double defaultFactor = factor ?? 1.0;
-
-      if (uom == null && uomList.isNotEmpty) {
-        final base = uomList.firstWhere(
-          (u) => u['isBase'] == true,
-          orElse: () => uomList.first,
-        );
-        defaultUom = base['name'] as String;
-        defaultFactor = (base['factor'] as num).toDouble();
-      }
-
-      setState(() {
-        _selectedItems.add({
-          ...product,
-          'qty': delta,
-          'uom': defaultUom,
-          'factor': defaultFactor,
-          'availableUoms': uomList,
+      if (index != -1) {
+        // Update existing
+        setState(() {
+          final currentQty = _selectedItems[index]['qty'] as int;
+          final newQty = currentQty + delta;
+          if (newQty <= 0) {
+            _selectedItems.removeAt(index);
+          } else {
+            _selectedItems[index]['qty'] = newQty;
+          }
         });
-      });
+      } else if (delta > 0) {
+        // Add new
+        List<dynamic> uomList = uoms ?? [];
+        if (uomList.isEmpty) {
+          final dbUoms = await (_db.select(
+            _db.productUoms,
+          )..where((t) => t.productId.equals(product['id']))).get();
+          uomList = dbUoms
+              .map(
+                (u) => <String, dynamic>{
+                  'name': u.uomName,
+                  'factor': u.conversionFactor,
+                  'isBase': u.isBase,
+                },
+              )
+              .toList();
+        }
+
+        // Default logic
+        // Use provided UOM/factor, or find base, or fallback to product's own UOM, finally PCS
+        String defaultUom = uom ?? (product['uom'] as String?) ?? "PCS";
+        double defaultFactor = factor ?? 1.0;
+
+        if (uom == null && uomList.isNotEmpty) {
+          final base = uomList.firstWhere(
+            (u) => u['isBase'] == true,
+            orElse: () => uomList.first as Map<String, dynamic>,
+          ) as Map<String, dynamic>;
+          defaultUom = base['name'] as String;
+          defaultFactor = (base['factor'] as num).toDouble();
+        }
+
+        setState(() {
+          _selectedItems.add({
+            ...product,
+            'qty': delta,
+            'uom': defaultUom,
+            'factor': defaultFactor,
+            'availableUoms': uomList,
+          });
+        });
+      }
+    } catch (e, stack) {
+      debugPrint('Error updating PO qty: $e\n$stack');
+      if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Failed to add item: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -291,6 +305,55 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
         if (isMobile) {
           return Scaffold(
             backgroundColor: const Color(0xFFF7F9FC),
+            appBar: AppBar(
+              title: Text(_showPreviewMobile ? 'Order Preview' : 'Purchase Order'),
+              backgroundColor: Colors.white,
+              elevation: 0,
+              actions: [
+                if (!_showPreviewMobile)
+                  IconButton(
+                    icon: Stack(
+                      children: [
+                        const Icon(Icons.shopping_cart_outlined, color: Colors.black),
+                        if (_selectedItems.isNotEmpty)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 14,
+                                minHeight: 14,
+                              ),
+                              child: Text(
+                                '${_selectedItems.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    onPressed: () => setState(() => _showPreviewMobile = true),
+                  ),
+              ],
+            ),
+            floatingActionButton: (!_showPreviewMobile && _selectedItems.isNotEmpty)
+                ? FloatingActionButton.extended(
+                    onPressed: () => setState(() => _showPreviewMobile = true),
+                    label: Text('View Order (${_selectedItems.length})'),
+                    icon: const Icon(Icons.receipt_long),
+                    backgroundColor: const Color(0xFF8B4256),
+                  )
+                : null,
             body: SafeArea(
               child: _showPreviewMobile
                   ? _buildPreviewPane(true) // Show Preview (Full Screen)
@@ -651,6 +714,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                       'cess': product.cessRate,
                       'imageUrl': product.imageUrl,
                       'hsn': product.hsnCode,
+                      'uom': product.uom,
                     };
 
                     return Container(
@@ -737,7 +801,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                                       .then((rows) {
                                         return rows
                                             .map(
-                                              (u) => {
+                                              (u) => <String, dynamic>{
                                                 'name': u.uomName,
                                                 'factor': u.conversionFactor,
                                                 'isBase': u.isBase,
@@ -1353,6 +1417,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                               Text(
                                 'Purchase Order',
                                 style: GoogleFonts.inter(
+
                                   fontSize: 24,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black,

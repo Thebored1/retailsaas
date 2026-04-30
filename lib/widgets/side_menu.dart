@@ -21,7 +21,7 @@ class SideMenu extends StatefulWidget {
 
 class _SideMenuState extends State<SideMenu> {
   final List<Map<String, dynamic>> _menuItems = [
-    {'icon': Icons.grid_view, 'label': 'Dashboard'},
+    {'icon': Icons.grid_view, 'label': 'Sales'},
     {'icon': Icons.assignment_return_outlined, 'label': 'Returns'},
     // Add more items here if needed later (e.g. Settings, Logout)
   ];

@@ -34,6 +34,7 @@ class _PosContentState extends State<PosContent> {
   final List<CartItem> cartItems = [];
   String _searchQuery = '';
   final GlobalKey _cartSidebarKey = GlobalKey();
+  bool _isSearchVisibleMobile = false;
 
   // Hoisted Payment State
   final List<PaymentSplit> _splits = [];
@@ -528,8 +529,7 @@ class _PosContentState extends State<PosContent> {
                     ),
                     child: Column(
                       children: [
-                        _buildHeader(isDesktop: isDesktop),
-                        _buildSortBar(),
+                        _buildHeader(isDesktop: isDesktop, isSmallScreen: !isDesktop),
                         Expanded(
                           child: StreamBuilder<List<ProductInventoryView>>(
                             stream: _inventoryStream,
@@ -625,93 +625,140 @@ class _PosContentState extends State<PosContent> {
 
   // ... (Header Widget inside PosContent)
 
-  Widget _buildHeader({required bool isDesktop}) {
+  Widget _buildHeader({required bool isDesktop, required bool isSmallScreen}) {
     final user = getIt<AuthService>().currentUser.value;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      widget.title,
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+          if (_isSearchVisibleMobile && isSmallScreen)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: TextField(
+                  onChanged: (val) => setState(() => _searchQuery = val),
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Search products...',
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.grey,
                     ),
-                    const SizedBox(width: 12),
-                    if (user != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blue.shade100),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.person,
-                              size: 14,
-                              color: Colors.blue,
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      onPressed: () => setState(() {
+                        _isSearchVisibleMobile = false;
+                        _searchQuery = '';
+                      }),
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.only(top: 8),
+                  ),
+                ),
+              ),
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            widget.title,
+                            style: GoogleFonts.inter(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              user.name,
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: Colors.blue.shade800,
-                                fontWeight: FontWeight.w600,
+                          ),
+                          const SizedBox(width: 12),
+                          if (user != null && isDesktop)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.blue.shade100),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.person,
+                                    size: 14,
+                                    color: Colors.blue,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    user.name,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: Colors.blue.shade800,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
-                  ],
+                      Text(
+                        'Select products to add to cart',
+                        style:
+                            GoogleFonts.inter(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
                 ),
-                Text(
-                  'Select products to add to cart',
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey),
-                ),
+                if (isDesktop) ...[
+                  Container(
+                    width: 250,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: TextField(
+                      onChanged: (val) => setState(() => _searchQuery = val),
+                      decoration: const InputDecoration(
+                        hintText: 'Search',
+                        prefixIcon: Icon(Icons.search),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () =>
+                        setState(() => _isSearchVisibleMobile = true),
+                  ),
+                  Builder(
+                    builder: (context) => IconButton(
+                      icon: Badge(
+                        label: Text('${cartItems.length}'),
+                        isLabelVisible: cartItems.isNotEmpty,
+                        child: const Icon(Icons.shopping_cart_outlined),
+                      ),
+                      onPressed: () => Scaffold.of(context).openEndDrawer(),
+                    ),
+                  ),
+                ],
               ],
             ),
-          ),
-          if (isDesktop) ...[
-            Container(
-              width: 250,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: TextField(
-                onChanged: (val) => setState(() => _searchQuery = val),
-                decoration: const InputDecoration(
-                  hintText: 'Search',
-                  prefixIcon: Icon(Icons.search),
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
-    );
-  }
-
-  Widget _buildSortBar() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Row(children: [Chip(label: const Text('Sort By'))]),
     );
   }
 }

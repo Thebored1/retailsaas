@@ -23,6 +23,7 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
   final List<CartItem> returnItems = [];
   String _searchQuery = '';
   bool _isSwapMode = false;
+  bool _isSearchVisibleMobile = false;
 
   Future<void> _addToReturns(
     Product product, {
@@ -217,7 +218,7 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
                     subtitle: _isSwapMode
                         ? 'Stock adjusted & Bill Generated.'
                         : 'Items added back to inventory.',
-                    buttonText: 'Back to Dashboard',
+                    buttonText: 'Back to Sales',
                     billId: billId, // Enable Printing
                     onBackToPos: () {},
                   ),
@@ -468,7 +469,6 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
                     child: Column(
                       children: [
                         _buildHeader(isDesktop: isDesktop),
-                        _buildSortBar(),
                         Expanded(
                           child: StreamBuilder<List<Product>>(
                             stream: _db.select(_db.products).watch(),
@@ -733,48 +733,64 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 18,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text('Filter', style: GoogleFonts.inter()),
-                ),
               ],
             ),
           ] else ...[
-            Row(
-              children: [
-                IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-                IconButton(
-                  icon: const Icon(Icons.filter_list),
-                  onPressed: () {},
-                ),
-                Builder(
-                  builder: (context) {
-                    return IconButton(
-                      icon: Badge(
-                        label: Text('${returnItems.length}'),
-                        isLabelVisible: returnItems.isNotEmpty,
-                        child: const Icon(Icons.shopping_cart_outlined),
+            if (_isSearchVisibleMobile)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: TextField(
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Search Returns',
+                      hintStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.grey,
                       ),
-                      onPressed: () {
-                        Scaffold.of(context).openEndDrawer();
-                      },
-                    );
-                  },
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.close, size: 16),
+                        onPressed: () => setState(() {
+                          _isSearchVisibleMobile = false;
+                          _searchQuery = '';
+                        }),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.only(top: 8),
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              )
+            else
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () => setState(() => _isSearchVisibleMobile = true),
+                  ),
+                  Builder(
+                    builder: (context) {
+                      return IconButton(
+                        icon: Badge(
+                          label: Text('${returnItems.length}'),
+                          isLabelVisible: returnItems.isNotEmpty,
+                          child: const Icon(Icons.shopping_cart_outlined),
+                        ),
+                        onPressed: () {
+                          Scaffold.of(context).openEndDrawer();
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
           ],
         ],
       ),
